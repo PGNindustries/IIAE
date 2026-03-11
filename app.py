@@ -584,6 +584,7 @@ elif selec == "Huella de Carbono":
 
 # --- MODELO DE CÁLCULO (LaTeX Correcto) ---
 elif selec == "Modelo de Cálculo":
+    plastics = load_plastics()
     st.title("🧮 Modelo Matemático IIAE")
     st.markdown("Metodología científica utilizada para los cálculos.")
     
