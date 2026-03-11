@@ -201,14 +201,17 @@ BOTELLA_PET_KG    = 0.025
 COEF_FAUNA        = 0.03
 HIST_COLUMNS      = ["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
 
+# Índices IIAE según la fórmula oficial del TFG:
+# IIAE = (PMA·0.30) + (PMI·0.25) + (PRE·0.30) + (PPA·0.15)
+# Fuente: "Índice de Impacto Ambiental Evitado – Biobardas / Univ. de Montevideo"
 DEF_PLASTICS = {
-    'EPS':  {"indice": 4.14, "vida": 50},
-    'PP':   {"indice": 3.92, "vida": 80},
-    'PS':   {"indice": 3.16, "vida": 50},
-    'LDPE': {"indice": 3.12, "vida": 100},
-    'HDPE': {"indice": 2.37, "vida": 100},
-    'PVC':  {"indice": 2.32, "vida": 200},
-    'PET':  {"indice": 1.42, "vida": 15},
+    'EPS':  {"indice": 3.95, "vida": 50,   "pma": 4.00, "pmi": 5.00, "pre": 4.25, "ppa": 1.50},
+    'PP':   {"indice": 3.83, "vida": 80,   "pma": 4.58, "pmi": 4.88, "pre": 3.00, "ppa": 2.25},
+    'LDPE': {"indice": 3.75, "vida": 100,  "pma": 4.92, "pmi": 3.25, "pre": 3.50, "ppa": 2.75},
+    'PS':   {"indice": 3.05, "vida": 50,   "pma": 2.25, "pmi": 3.50, "pre": 4.25, "ppa": 1.50},
+    'HDPE': {"indice": 2.99, "vida": 800,  "pma": 3.00, "pmi": 3.25, "pre": 2.25, "ppa": 4.00},
+    'PVC':  {"indice": 2.32, "vida": 2500, "pma": 1.16, "pmi": 1.00, "pre": 3.25, "ppa": 5.00},
+    'PET':  {"indice": 1.11, "vida": 20,   "pma": 1.25, "pmi": 1.13, "pre": 1.00, "ppa": 1.00},
 }
 
 COLOR_SEQ = [COLOR_PRIMARY, COLOR_ACCENT, '#a8d5b0', '#e7e7c0', '#f5c06a', '#a0a080', '#c9eac6']
@@ -472,12 +475,24 @@ if selec == "Inicio":
         if os.path.exists("dibujo_rio_biobarda.png"):
             st.image("dibujo_rio_biobarda.png", use_container_width=True)
         else:
-            # Placeholder visual si no hay imagen
+            # Placeholder visual con identidad Biobardas (sin imagen)
             st.markdown(f"""
-            <div style='background:linear-gradient(135deg,{COLOR_PRIMARY},{COLOR_ACCENT});
-                        border-radius:20px;height:280px;display:flex;align-items:center;
-                        justify-content:center;'>
-              <span style='font-size:6em'>🌊</span>
+            <div style='background:linear-gradient(145deg,{COLOR_PRIMARY} 0%,#0f3d32 60%,{COLOR_ACCENT} 100%);
+                        border-radius:20px;height:280px;display:flex;flex-direction:column;
+                        align-items:center;justify-content:center;gap:10px;'>
+              <svg width="90" height="90" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="48" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
+                <path d="M20 65 Q30 45 40 55 Q50 65 60 45 Q70 25 80 45"
+                      stroke="{COLOR_ACCENT}" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+                <path d="M20 75 Q30 55 40 65 Q50 75 60 55 Q70 35 80 55"
+                      stroke="rgba(255,255,255,0.5)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                <rect x="43" y="18" width="5" height="28" rx="2.5" fill="white" opacity="0.9"/>
+                <path d="M48 22 L60 30 L48 38 Z" fill="{COLOR_ACCENT}"/>
+              </svg>
+              <p style='color:rgba(255,255,255,0.85);font-family:Montserrat,sans-serif;
+                        font-size:0.85em;font-weight:600;letter-spacing:1px;margin:0;'>
+                BIOBARDAS · RÍO DE LA PLATA
+              </p>
             </div>
             """, unsafe_allow_html=True)
 
@@ -909,51 +924,154 @@ elif selec == "Huella de Carbono":
         st.warning("⚠️ El balance CO₂ depende de la eficiencia del proceso de reciclaje.")
 
 
+
 # ---- MODELO DE CÁLCULO ----
 elif selec == "Modelo de Cálculo":
     plastics = load_plastics()
     st.title("🧮 Modelo Matemático IIAE")
-    st.markdown("Metodología científica utilizada para los cálculos del sistema.")
+    st.markdown("Metodología científica del *Índice de Impacto Ambiental Evitado*. Biobardas / Universidad de Montevideo.")
 
-    tab1, tab2, tab3 = st.tabs(["Fórmulas", "Parámetros", "Simulador"])
+    tab1, tab2, tab3, tab4 = st.tabs(["Fórmula IIAE", "Criterios y Pesos", "Tabla de Polímeros", "Simulador"])
 
     with tab1:
-        st.markdown("### 1. Índice de Impacto Ambiental Evitado")
-        st.latex(r"\text{IIAE} = \sum_{i=1}^{n} \left[ M_i \cdot \left( P_{M_i} + P_{\mu P_i} + P_{E_i} \right) \right]")
-        st.caption("Suma ponderada de la masa por factores: Macroplástico (P_M), Microplástico (P_μP) y Riesgo Ecológico (P_E).")
+        st.markdown("### Fórmula Principal")
+        st.latex(r"\text{IIAE} = (P_{MA} \cdot 0{,}30) + (P_{MI} \cdot 0{,}25) + (P_{RE} \cdot 0{,}30) + (P_{PA} \cdot 0{,}15)")
 
-        st.markdown("### 2. Persistencia Acumulada en el Medio")
-        st.latex(r"\text{Persistencia} = \sum_{i=1}^{n} \left( M_i \times V_i \right)")
-        st.caption("M_i = masa del material i (kg), V_i = vida media en el medio (años).")
+        st.markdown(f"""
+<div style='background:rgba(71,215,172,0.08);border-radius:12px;padding:18px 22px;
+            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 20px 0;'>
+  <b>Donde:</b>
+  <ul style='margin:8px 0 0 0;line-height:2;'>
+    <li><b>P<sub>MA</sub> – Daño Macroplástico (30%):</b> Impacto físico inmediato: flotabilidad, enredo e ingestión.</li>
+    <li><b>P<sub>MI</sub> – Daño Microplástico (25%):</b> Tendencia a fragmentarse en partículas irrecuperables.</li>
+    <li><b>P<sub>RE</sub> – Riesgo Ecológico (30%):</b> Toxicidad química por lixiviación y adsorción de contaminantes.</li>
+    <li><b>P<sub>PA</sub> – Persistencia Ambiental (15%):</b> Vida media del residuo en el ecosistema.</li>
+  </ul>
+</div>
+        """, unsafe_allow_html=True)
 
-        st.markdown("### 3. Estimación de Fauna Protegida")
-        st.latex(r"\text{Fauna} = \text{IIAE}_{\text{total}} \times 0.03")
-        st.caption("Coeficiente empírico basado en densidad de fauna en ríos afectados.")
+        st.markdown("### Fórmulas Auxiliares")
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("**Persistencia Acumulada:**")
+            st.latex(r"\text{Persist.} = \sum_{i} M_i \times V_i")
+            st.caption("M_i = kg recogidos del material i, V_i = vida media en años.")
+        with c2:
+            st.markdown("**Fauna Protegida (estimada):**")
+            st.latex(r"\text{Fauna} = \text{IIAE}_{total} \times 0{,}03")
+            st.caption("Coeficiente empírico basado en densidad de fauna en ríos afectados.")
 
-        st.markdown("### 4. Equivalencia en Botellas PET")
-        st.latex(r"\text{Botellas} = \frac{M_{\text{total}}}{0.025 \text{ kg/botella}}")
+        st.markdown("---")
+        st.markdown("### Referencias Científicas")
+        refs = [
+            ("Wilcox et al. (2016)", "Identifica el impacto físico como la causa más documentada de mortalidad directa en fauna marina y fluvial. Base del criterio P_MA."),
+            ("Gall & Thompson (2015)", "El 100% de tortugas y el 40% de aves interactúan casi exclusivamente con plásticos flotantes. Sustenta la ponderación de flotabilidad."),
+            ("Song et al. (2017)", "Describe el proceso sinérgico UV + abrasión mecánica que genera fragmentación. El EPS pierde el 76.5% de su volumen en solo 6 meses. Base del criterio P_MI."),
+            ("Fu et al. (2021)", "Descubre la interacción π-π del poliestireno con hidrocarburos aromáticos. Sustenta la alta adsorción de PS y EPS."),
+            ("Xia et al. (2023)", "Demuestra que polímeros amorfos (LDPE) adsorben contaminantes en su interior. Base de la ponderación de adsorción en P_RE."),
+            ("Chamas et al. (2020)", "Calcula las Tasas de Degradación Superficial Específica (SSDR) de cada polímero. Base completa del criterio P_PA."),
+            ("Hermabessiere et al. (2017)", "El PVC puede contener hasta el 50% de su peso en aditivos químicos. Sustenta la máxima puntuación de lixiviación del PVC."),
+            ("Oluwoye et al. (2023)", "El fondo del río actúa como 'cápsula del tiempo': sin UV y con bajas temperaturas, la degradación se detiene casi por completo."),
+        ]
+        for autor, desc in refs:
+            st.markdown(f"- **{autor}:** {desc}")
 
     with tab2:
-        st.markdown("**Tabla de Referencia de Materiales:**")
-        df_ref = pd.DataFrame([
-            {"Material": k, "Índice IIAE": v["indice"], "Vida Media (años)": v["vida"],
-             "Peligrosidad": "🔴 Alta" if v["indice"] >= 3.5 else ("🟡 Media" if v["indice"] >= 2.5 else "🟢 Baja")}
-            for k, v in sorted(plastics.items(), key=lambda x: -x[1]["indice"])
-        ])
-        st.dataframe(df_ref, use_container_width=True, hide_index=True)
+        st.markdown("### Distribución de Pesos del IIAE")
 
-        # Gráfico de índices
-        fig_idx = px.bar(
-            df_ref.sort_values("Índice IIAE", ascending=True),
-            x="Índice IIAE", y="Material", orientation='h',
-            title="Índices IIAE por Material", color="Índice IIAE",
-            color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY]
+        pesos_data = [
+            {"Criterio": "P_MA – Daño Macroplástico", "Peso (%)": 30,
+             "Justificación": "Daño físico inmediato y letal; causa más frecuente de mortalidad directa documentada."},
+            {"Criterio": "P_MI – Daño Microplástico",  "Peso (%)": 25,
+             "Justificación": "La fragmentación hace el residuo irrecuperable; premia capturar plásticos frágiles (EPS) a tiempo."},
+            {"Criterio": "P_RE – Riesgo Ecológico",    "Peso (%)": 30,
+             "Justificación": "Toxicidad invisible pero devastadora; altera la cadena trófica de forma persistente."},
+            {"Criterio": "P_PA – Persistencia Ambiental", "Peso (%)": 15,
+             "Justificación": "Daño a largo plazo; el IIAE prioriza lo que mata hoy sobre el daño generacional."},
+        ]
+        df_pesos = pd.DataFrame(pesos_data)
+        st.dataframe(df_pesos, use_container_width=True, hide_index=True)
+
+        fig_pie_pesos = px.pie(
+            df_pesos, names="Criterio", values="Peso (%)",
+            title="Distribución de Pesos del Índice IIAE",
+            color_discrete_sequence=COLOR_SEQ, hole=0.4
         )
-        fig_idx.update_layout(coloraxis_showscale=False)
-        st.plotly_chart(fig_idx, use_container_width=True)
+        fig_pie_pesos.update_traces(textposition='inside', textinfo='percent+label')
+        st.plotly_chart(fig_pie_pesos, use_container_width=True)
+
+        st.markdown("### Subcriterios de cada componente")
+        st.markdown(f"""
+<div style='display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px;'>
+  <div style='background:#f0f8f4;border-radius:10px;padding:14px;border-top:3px solid {COLOR_PRIMARY};'>
+    <b>P_MA – Macroplástico</b><br/>
+    <small>1.1 Flotabilidad &nbsp;·&nbsp; 1.2 Potencial de Enredo &nbsp;·&nbsp; 1.3 Potencial de Ingestión</small>
+  </div>
+  <div style='background:#f0f8f4;border-radius:10px;padding:14px;border-top:3px solid {COLOR_ACCENT};'>
+    <b>P_MI – Microplástico</b><br/>
+    <small>2.1 Tasa de Fragmentación &nbsp;·&nbsp; 2.2 Exposición Superficial (UV)</small>
+  </div>
+  <div style='background:#f0f8f4;border-radius:10px;padding:14px;border-top:3px solid {COLOR_WARN};'>
+    <b>P_RE – Riesgo Ecológico</b><br/>
+    <small>3.1 Lixiviación de Aditivos &nbsp;·&nbsp; 3.2 Adsorción de Contaminantes</small>
+  </div>
+  <div style='background:#f0f8f4;border-radius:10px;padding:14px;border-top:3px solid #888;'>
+    <b>P_PA – Persistencia</b><br/>
+    <small>Vida media proyectada según Chamas et al. (2020) y Oluwoye et al. (2023)</small>
+  </div>
+</div>
+        """, unsafe_allow_html=True)
 
     with tab3:
-        st.markdown("**Simula el impacto de distintos escenarios:**")
+        st.markdown("**Índices IIAE por polímero — Tabla Final del TFG (Biobardas / Univ. de Montevideo):**")
+
+        tabla_oficial = [
+            {"Rg": "🥇 1", "Polímero": "EPS",  "P_MA": 4.00, "P_MI": 5.00, "P_RE": 4.25, "P_PA": 1.50, "IIAE": 3.95, "Vida (años)": "~50",   "Peligrosidad": "🔴 Alta"},
+            {"Rg": "🥈 2", "Polímero": "PP",   "P_MA": 4.58, "P_MI": 4.88, "P_RE": 3.00, "P_PA": 2.25, "IIAE": 3.83, "Vida (años)": "~80",   "Peligrosidad": "🔴 Alta"},
+            {"Rg": "🥉 3", "Polímero": "LDPE", "P_MA": 4.92, "P_MI": 3.25, "P_RE": 3.50, "P_PA": 2.75, "IIAE": 3.75, "Vida (años)": "~100",  "Peligrosidad": "🔴 Alta"},
+            {"Rg": "4",    "Polímero": "PS",   "P_MA": 2.25, "P_MI": 3.50, "P_RE": 4.25, "P_PA": 1.50, "IIAE": 3.05, "Vida (años)": "~50",   "Peligrosidad": "🟡 Media"},
+            {"Rg": "5",    "Polímero": "HDPE", "P_MA": 3.00, "P_MI": 3.25, "P_RE": 2.25, "P_PA": 4.00, "IIAE": 2.99, "Vida (años)": "~800",  "Peligrosidad": "🟡 Media"},
+            {"Rg": "6",    "Polímero": "PVC",  "P_MA": 1.16, "P_MI": 1.00, "P_RE": 3.25, "P_PA": 5.00, "IIAE": 2.32, "Vida (años)": ">2500", "Peligrosidad": "🟡 Media"},
+            {"Rg": "7",    "Polímero": "PET",  "P_MA": 1.25, "P_MI": 1.13, "P_RE": 1.00, "P_PA": 1.00, "IIAE": 1.11, "Vida (años)": "~20",   "Peligrosidad": "🟢 Baja"},
+        ]
+        df_oficial = pd.DataFrame(tabla_oficial)
+        st.dataframe(
+            df_oficial.style.format({"P_MA": "{:.2f}", "P_MI": "{:.2f}",
+                                     "P_RE": "{:.2f}", "P_PA": "{:.2f}", "IIAE": "{:.2f}"}),
+            use_container_width=True, hide_index=True
+        )
+
+        st.markdown("#### Radar de Criterios — Todos los Polímeros")
+        cats_r   = ["P_MA", "P_MI", "P_RE", "P_PA"]
+        labels_r = ["Macroplástico", "Microplástico", "Riesgo Eco.", "Persistencia"]
+        fig_rad_all = go.Figure()
+        for row in tabla_oficial:
+            vals = [row[c] for c in cats_r] + [row[cats_r[0]]]
+            fig_rad_all.add_trace(go.Scatterpolar(
+                r=vals, theta=labels_r + [labels_r[0]],
+                fill='toself', name=row["Polímero"]
+            ))
+        fig_rad_all.update_layout(
+            polar=dict(radialaxis=dict(visible=True, range=[0, 5.5])),
+            title="Perfil de Riesgo por Criterio – Todos los Polímeros",
+            height=480
+        )
+        st.plotly_chart(fig_rad_all, use_container_width=True)
+
+        df_bar_iiae = pd.DataFrame(tabla_oficial).sort_values("IIAE")
+        fig_bar_iiae = px.bar(
+            df_bar_iiae, x="IIAE", y="Polímero", orientation='h',
+            title="Ranking IIAE Final",
+            color="IIAE",
+            color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+            text="IIAE"
+        )
+        fig_bar_iiae.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+        fig_bar_iiae.update_layout(coloraxis_showscale=False, xaxis_range=[0, 4.5])
+        st.plotly_chart(fig_bar_iiae, use_container_width=True)
+
+    with tab4:
+        st.markdown("**Simula el impacto de distintos escenarios de recogida:**")
         sim_col1, sim_col2 = st.columns(2)
         with sim_col1:
             sim_mat = st.selectbox("Material", list(plastics.keys()))
@@ -963,6 +1081,24 @@ elif selec == "Modelo de Cálculo":
             sim_iiae  = sim_kg * dat["indice"]
             sim_fauna = sim_iiae * COEF_FAUNA
             sim_pers  = sim_kg * dat["vida"]
-            st.markdown(metric_card("IIAE simulado",       f"{sim_iiae:.2f}", "🌿"), unsafe_allow_html=True)
-            st.markdown(metric_card("Fauna protegida",     f"{sim_fauna:.1f}", "🐟", "accent"), unsafe_allow_html=True)
-            st.markdown(metric_card("Años persistencia",   f"{sim_pers:,}", "⏳", "warn"), unsafe_allow_html=True)
+            st.markdown(metric_card("IIAE simulado",     f"{sim_iiae:.2f}", "🌿"), unsafe_allow_html=True)
+            st.markdown(metric_card("Fauna protegida",   f"{sim_fauna:.1f}", "🐟", "accent"), unsafe_allow_html=True)
+            st.markdown(metric_card("Años persistencia", f"{sim_pers:,}", "⏳", "warn"), unsafe_allow_html=True)
+
+        # Desglose de criterios si el material tiene los datos completos
+        if all(k in dat for k in ["pma", "pmi", "pre", "ppa"]):
+            st.markdown(f"#### Desglose de criterios — {sim_mat}")
+            df_des = pd.DataFrame({
+                "Criterio":    ["P_MA (Macro)", "P_MI (Micro)", "P_RE (Ecológico)", "P_PA (Persistencia)"],
+                "Puntuación":  [dat["pma"], dat["pmi"], dat["pre"], dat["ppa"]],
+                "Peso":        [0.30, 0.25, 0.30, 0.15],
+            })
+            df_des["Aportación al IIAE"] = df_des["Puntuación"] * df_des["Peso"]
+            fig_des = px.bar(
+                df_des, x="Criterio", y="Aportación al IIAE",
+                color="Criterio", title=f"Composición del IIAE — {sim_mat} ({sim_kg} kg)",
+                color_discrete_sequence=COLOR_SEQ, text="Aportación al IIAE"
+            )
+            fig_des.update_traces(texttemplate='%{text:.2f}', textposition='outside')
+            fig_des.update_layout(showlegend=False)
+            st.plotly_chart(fig_des, use_container_width=True)
