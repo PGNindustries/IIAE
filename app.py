@@ -658,7 +658,7 @@ elif selec == "Análisis Ambiental":
                         "Kg recogidos": "{:.2f}", "Índice IIAE": "{:.2f}",
                         "Impacto total": "{:.3f}", "Fauna afectada": "{:.3f}",
                         "Impacto·Persistencia": "{:.1f}"
-                    }).background_gradient(subset=["Impacto total"], cmap='Greens'),
+                    }),
                     use_container_width=True, hide_index=True
                 )
 
@@ -799,8 +799,7 @@ elif selec == "Panel de Resultados":
             st.markdown("**🏆 Ranking de Riesgo (por IIAE):**")
             st.dataframe(
                 df_peligro[["Plástico", "Kg", "Índice", "Impacto Real"]]
-                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"})
-                .background_gradient(subset=["Impacto Real"], cmap='RdYlGn_r'),
+                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"}),
                 use_container_width=True, height=280, hide_index=True
             )
             st.caption("💡 Plásticos ligeros pueden tener mayor impacto que materiales más pesados.")
@@ -897,8 +896,7 @@ elif selec == "Huella de Carbono":
 
     # Tabla resumen
     st.dataframe(
-        df_c.set_index("Escenario").style.format("{:.1f}")
-        .background_gradient(cmap='RdYlGn_r'),
+        df_c.set_index("Escenario").style.format("{:.1f}"),
         use_container_width=True
     )
 
