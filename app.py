@@ -222,13 +222,27 @@ COLOR_SEQ = [COLOR_PRIMARY, COLOR_ACCENT, '#a8d5b0', '#e7e7c0', '#f5c06a', '#a0a
 # ==========================================
 
 def load_plastics() -> dict:
-    """Carga plásticos desde JSON. Sin cache para reflejar cambios inmediatos."""
+    """Carga plásticos con migración automática de índices desactualizados.
+    Si el JSON contiene los valores pre-TFG, los reemplaza con los del PDF.
+    """
+    INDICES_OBSOLETOS = {
+        'EPS': 4.14, 'PP': 3.92, 'PS': 3.16,
+        'LDPE': 3.12, 'HDPE': 2.37, 'PET': 1.42,
+    }
     if os.path.exists(PLASTIC_FILE):
         try:
             with open(PLASTIC_FILE, 'r') as f:
                 data = json.load(f)
-                if isinstance(data, dict) and data:
-                    return data
+            if isinstance(data, dict) and data:
+                migrated = False
+                for mat, old_idx in INDICES_OBSOLETOS.items():
+                    if mat in data and abs(data[mat].get("indice", 0) - old_idx) < 0.01:
+                        data[mat] = DEF_PLASTICS[mat].copy()
+                        migrated = True
+                if migrated:
+                    with open(PLASTIC_FILE, 'w') as f:
+                        json.dump(data, f, indent=2)
+                return data
         except (json.JSONDecodeError, IOError):
             pass
     return DEF_PLASTICS.copy()
