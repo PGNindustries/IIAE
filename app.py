@@ -522,8 +522,10 @@ elif selec == "Análisis Ambiental":
 
         with c1:
             st.markdown("**Materiales configurados:**")
-            df_p = pd.DataFrame.from_dict(plastics, orient='index').reset_index()
-            df_p.columns = ["Material", "Índice IIAE", "Vida (años)"]
+            df_p = pd.DataFrame([
+                {"Material": k, "Índice IIAE": v["indice"], "Vida (años)": v["vida"]}
+                for k, v in plastics.items()
+            ])
             st.dataframe(df_p, use_container_width=True, hide_index=True)
 
         with c2:
