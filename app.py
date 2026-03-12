@@ -199,7 +199,7 @@ PLASTIC_FILE      = "data_plasticos.json"
 HIST_FILE         = "historial_recolecciones.csv"
 BOTELLA_PET_KG    = 0.025
 COEF_FAUNA        = 0.03
-HIST_COLUMNS      = ["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
+HIST_COLUMNS      = ["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
 
 # Índices IIAE según la fórmula oficial del TFG:
 # IIAE = (PMA·0.30) + (PMI·0.25) + (PRE·0.30) + (PPA·0.15)
@@ -268,11 +268,22 @@ def parse_list_string(s: str) -> list[float]:
 
 
 def load_historial() -> pd.DataFrame:
-    """Carga historial CSV con manejo robusto de errores."""
+    """Carga historial CSV. Compatible con formato antiguo (5 cols) y nuevo (8 cols)."""
+    OLD_COLUMNS = ["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
     if not os.path.exists(HIST_FILE) or os.path.getsize(HIST_FILE) == 0:
         return pd.DataFrame(columns=HIST_COLUMNS)
     try:
-        hist = pd.read_csv(HIST_FILE, header=None, names=HIST_COLUMNS)
+        # Detectar número de columnas para compatibilidad con CSV antiguo
+        with open(HIST_FILE, 'r') as f:
+            first_line = f.readline()
+        ncols = len(first_line.split(','))
+        col_names = HIST_COLUMNS if ncols >= 8 else OLD_COLUMNS
+        hist = pd.read_csv(HIST_FILE, header=None, names=col_names)
+        # Si es formato antiguo, añadir columnas faltantes con valor vacío
+        for col in HIST_COLUMNS:
+            if col not in hist.columns:
+                hist[col] = ""
+        hist = hist[HIST_COLUMNS]  # reorder
         hist["Fecha"] = pd.to_datetime(hist["Fecha"], errors='coerce')
         hist["Impacto total"] = pd.to_numeric(hist["Impacto total"], errors='coerce').fillna(0)
         hist["Fauna afectada"] = pd.to_numeric(hist["Fauna afectada"], errors='coerce').fillna(0)
@@ -283,10 +294,14 @@ def load_historial() -> pd.DataFrame:
         return pd.DataFrame(columns=HIST_COLUMNS)
 
 
-def save_historial(fecha: str, tipos: list, cantidades: list, total: float, fauna: float) -> None:
+def save_historial(fecha: str, tipos: list, cantidades: list, total: float, fauna: float,
+                   ubicacion: str = "", operador: str = "", notas: str = "") -> None:
     try:
         with open(HIST_FILE, 'a', newline='') as f:
-            csv.writer(f).writerow([fecha, ", ".join(tipos), ", ".join(map(str, cantidades)), total, fauna])
+            csv.writer(f).writerow([
+                fecha, ubicacion, operador, notas,
+                ", ".join(tipos), ", ".join(map(str, cantidades)), total, fauna
+            ])
     except IOError as e:
         st.error(f"Error al guardar historial: {e}")
 
@@ -339,7 +354,8 @@ def try_write_image(fig, path: str) -> bool:
 
 
 def crear_pdf(df: pd.DataFrame, total: float, fauna: float, kg_total: float,
-              autor: str = "Equipo Biobardas") -> bytes:
+              autor: str = "Equipo Biobardas", fecha_hora: str = "",
+              ubicacion: str = "", notas: str = "") -> bytes:
     pdf = FPDF()
     pdf.add_page()
 
@@ -354,7 +370,14 @@ def crear_pdf(df: pd.DataFrame, total: float, fauna: float, kg_total: float,
     pdf.set_xy(10, 35)
     pdf.set_font('Arial', '', 11)
     pdf.set_text_color(65, 81, 49)
-    pdf.cell(0, 8, f'Fecha: {datetime.date.today().strftime("%d/%m/%Y")}   |   Autor: {autor}', ln=1)
+    fecha_str = fecha_hora if fecha_hora else datetime.datetime.now().strftime("%d/%m/%Y %H:%M")
+    pdf.cell(0, 8, f'Fecha y hora: {fecha_str}   |   Operador: {autor}', ln=1)
+    if ubicacion:
+        pdf.cell(0, 8, f'Ubicacion: {ubicacion}', ln=1)
+    if notas:
+        pdf.set_font('Arial', 'I', 10)
+        pdf.multi_cell(0, 7, f'Notas: {notas}')
+        pdf.set_font('Arial', '', 11)
     pdf.ln(4)
 
     # KPIs
@@ -560,10 +583,22 @@ elif selec == "Análisis Ambiental":
                     st.rerun()
 
     st.markdown("---")
-    st.subheader("📦 Pesos recogidos por material (kg)")
+    st.subheader("📋 Datos de la Campaña")
 
-    # ── Formulario de cálculo ──
     with st.form("calc_form"):
+        # ── Metadatos de la campaña ──
+        m1, m2 = st.columns(2)
+        with m1:
+            camp_fecha = st.date_input("📅 Fecha de recogida", value=datetime.date.today())
+            camp_hora  = st.time_input("🕐 Hora de inicio", value=datetime.time(9, 0), step=900)
+            camp_ubi   = st.text_input("📍 Ubicación / Tramo del río", placeholder="Ej: Km 15, Margen derecha")
+        with m2:
+            camp_op    = st.text_input("👤 Operador / Equipo responsable", placeholder="Ej: Equipo A – Pedro García")
+            camp_notas = st.text_area("📝 Notas de campo", placeholder="Condiciones, incidencias, observaciones...", height=110)
+
+        st.markdown("---")
+        st.subheader("📦 Pesos recogidos por material (kg)")
+
         p_keys  = list(plastics.keys())
         cols    = st.columns(min(4, len(p_keys)))
         cantidades = {}
@@ -605,12 +640,23 @@ elif selec == "Análisis Ambiental":
             st.session_state.update({
                 'df': df, 'total': tot_imp, 'ftot': tot_fau, 'kgtot': kg_total
             })
+            # Combinar fecha + hora en un solo timestamp
+            fecha_hora = datetime.datetime.combine(camp_fecha, camp_hora).strftime("%d/%m/%Y %H:%M")
+            fecha_iso  = datetime.datetime.combine(camp_fecha, camp_hora).isoformat(sep=' ')
             save_historial(
-                datetime.date.today().isoformat(),
+                fecha_iso,
                 list(df["Plástico"]),
                 list(df["Kg recogidos"]),
-                tot_imp, tot_fau
+                tot_imp, tot_fau,
+                ubicacion=camp_ubi,
+                operador=camp_op,
+                notas=camp_notas
             )
+            # Guardar metadatos para el PDF
+            st.session_state.update({
+                'camp_op': camp_op, 'camp_ubi': camp_ubi,
+                'camp_notas': camp_notas, 'camp_fecha_hora': fecha_hora
+            })
 
             st.success("✅ Campaña registrada correctamente.")
             st.markdown("### 🏁 Resultados del Análisis")
@@ -698,7 +744,11 @@ elif selec == "Análisis Ambiental":
         st.markdown("---")
         pdf_bytes = crear_pdf(
             st.session_state['df'], st.session_state['total'],
-            st.session_state['ftot'], st.session_state['kgtot']
+            st.session_state['ftot'], st.session_state['kgtot'],
+            autor    = st.session_state.get('camp_op', 'Equipo Biobardas'),
+            fecha_hora = st.session_state.get('camp_fecha_hora', ''),
+            ubicacion  = st.session_state.get('camp_ubi', ''),
+            notas      = st.session_state.get('camp_notas', '')
         )
         st.download_button(
             "📥 Descargar Informe Oficial (PDF)",
@@ -756,34 +806,88 @@ elif selec == "Panel de Resultados":
         df_mes = hist.groupby("Mes").agg(
             Impacto=("Impacto total", "sum"),
             Campañas=("Impacto total", "count"),
-            KgTotal=("kgs", "sum")
+            KgTotal=("kgs", "sum"),
+            Fauna=("Fauna afectada", "sum")
         ).reset_index()
         fig_line = px.bar(
             df_mes, x="Mes", y="Impacto", color_discrete_sequence=[COLOR_PRIMARY],
             title="Impacto IIAE por Mes", text="Campañas",
-            hover_data={"KgTotal": ":.1f", "Campañas": True}
+            hover_data={"KgTotal": ":.1f", "Campañas": True, "Fauna": ":.1f"}
         )
         fig_line.update_traces(texttemplate='%{text} camp.', textposition='outside')
         st.plotly_chart(fig_line, use_container_width=True)
+
+        # Mini tabla resumen mensual
+        st.dataframe(
+            df_mes.rename(columns={"Mes": "Mes", "Impacto": "IIAE", "KgTotal": "Kg Total", "Fauna": "Fauna"})
+            .style.format({"IIAE": "{:.2f}", "Kg Total": "{:.1f}", "Fauna": "{:.1f}"}),
+            use_container_width=True, hide_index=True
+        )
 
     with tab_s:
         hist_s = hist.sort_values("Fecha").copy()
         hist_s["IIAE Acumulado"] = hist_s["Impacto total"].cumsum()
         hist_s["Kg Acumulados"]  = hist_s["kgs"].cumsum()
+        hist_s["Hora"]           = hist_s["Fecha"].dt.strftime("%H:%M")
+        hist_s["Fecha_str"]      = hist_s["Fecha"].dt.strftime("%d/%m/%Y %H:%M")
         fig_area = px.area(
             hist_s, x="Fecha", y="IIAE Acumulado",
             title="Impacto Positivo Acumulado (IIAE)",
-            color_discrete_sequence=[COLOR_ACCENT]
+            color_discrete_sequence=[COLOR_ACCENT],
+            hover_data={"Fecha_str": True, "Hora": True, "Kg Acumulados": ":.1f", "Fecha": False}
         )
         st.plotly_chart(fig_area, use_container_width=True)
 
     with tab_tbl:
+        # Formatear fecha con hora para mostrar en tabla
+        hist_display = hist.copy()
+        hist_display["Fecha"] = hist_display["Fecha"].dt.strftime("%d/%m/%Y  %H:%M")
+        # Reemplazar vacíos por guión
+        for col in ["Ubicación", "Operador", "Notas"]:
+            hist_display[col] = hist_display[col].replace("", "—").fillna("—")
         st.dataframe(
-            hist[["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada", "kgs"]]
+            hist_display[["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "kgs", "Impacto total", "Fauna afectada"]]
             .rename(columns={"kgs": "Kg Total"})
             .style.format({"Impacto total": "{:.2f}", "Fauna afectada": "{:.2f}", "Kg Total": "{:.2f}"}),
             use_container_width=True, hide_index=True
         )
+
+    # ── Análisis de horarios ──
+    if hist["Fecha"].dt.hour.sum() > 0:  # solo si hay datos de hora reales
+        st.markdown("---")
+        st.subheader("🕐 Análisis de Horarios")
+        hc1, hc2 = st.columns(2)
+        with hc1:
+            hist["Hora_num"] = hist["Fecha"].dt.hour + hist["Fecha"].dt.minute / 60
+            hist["Hora_str"] = hist["Fecha"].dt.strftime("%H:%M")
+            fig_hora = px.scatter(
+                hist, x="Hora_num", y="Impacto total",
+                title="Impacto por hora del día",
+                color="Impacto total",
+                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+                hover_data={"Hora_str": True, "Impacto total": ":.2f", "Hora_num": False},
+                labels={"Hora_num": "Hora del día", "Impacto total": "IIAE"}
+            )
+            fig_hora.update_layout(coloraxis_showscale=False, xaxis=dict(tickvals=list(range(0,25,2)),
+                ticktext=[f"{h:02d}:00" for h in range(0,25,2)]))
+            st.plotly_chart(fig_hora, use_container_width=True)
+        with hc2:
+            franja_labels = {(6,12): "Mañana 6-12h", (12,17): "Mediodía 12-17h",
+                             (17,21): "Tarde 17-21h", (0,6): "Nocturno 0-6h", (21,24): "Noche 21-24h"}
+            def get_franja(h):
+                for (a,b), label in franja_labels.items():
+                    if a <= h < b: return label
+                return "Otra"
+            hist["Franja"] = hist["Fecha"].dt.hour.apply(get_franja)
+            df_franja = hist.groupby("Franja")["Impacto total"].agg(["sum", "count"]).reset_index()
+            df_franja.columns = ["Franja", "IIAE Total", "Campañas"]
+            fig_franja = px.bar(df_franja, x="Franja", y="IIAE Total",
+                title="IIAE por franja horaria", color="IIAE Total",
+                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+                text="Campañas")
+            fig_franja.update_traces(texttemplate='%{text} camp.', textposition='outside')
+            fig_franja.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig_franja, use_container_width=True)
 
     # ── Análisis de peligrosidad ──
     st.markdown("---")
