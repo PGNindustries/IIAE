@@ -268,26 +268,41 @@ def parse_list_string(s: str) -> list[float]:
 
 
 def load_historial() -> pd.DataFrame:
-    """Carga historial CSV. Compatible con formato antiguo (5 cols) y nuevo (8 cols)."""
+    """Carga historial CSV. Compatible con formato antiguo (5 cols) y nuevo (8 cols).
+    
+    Formato antiguo: Fecha | Tipos | Cantidades (kg) | Impacto total | Fauna afectada
+    Formato nuevo:   Fecha | Ubicación | Operador | Notas | Tipos | Cantidades (kg) | Impacto total | Fauna afectada
+    
+    La detección usa csv.reader para contar campos reales (maneja comas dentro de campos).
+    """
     OLD_COLUMNS = ["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
+    
     if not os.path.exists(HIST_FILE) or os.path.getsize(HIST_FILE) == 0:
         return pd.DataFrame(columns=HIST_COLUMNS)
     try:
-        # Detectar número de columnas para compatibilidad con CSV antiguo
-        with open(HIST_FILE, 'r') as f:
-            first_line = f.readline()
-        ncols = len(first_line.split(','))
-        col_names = HIST_COLUMNS if ncols >= 8 else OLD_COLUMNS
-        hist = pd.read_csv(HIST_FILE, header=None, names=col_names)
-        # Si es formato antiguo, añadir columnas faltantes con valor vacío
-        for col in HIST_COLUMNS:
-            if col not in hist.columns:
-                hist[col] = ""
-        hist = hist[HIST_COLUMNS]  # reorder
-        hist["Fecha"] = pd.to_datetime(hist["Fecha"], errors='coerce')
+        # Contar columnas reales de la primera fila con csv.reader (respeta comillas)
+        import csv as _csv
+        with open(HIST_FILE, 'r', newline='') as f:
+            reader = _csv.reader(f)
+            first_row = next(reader, [])
+        ncols = len(first_row)
+        
+        is_new_format = (ncols >= 8)
+        
+        if is_new_format:
+            hist = pd.read_csv(HIST_FILE, header=None, names=HIST_COLUMNS)
+        else:
+            # Formato antiguo: leer con 5 columnas y añadir las nuevas vacías
+            hist = pd.read_csv(HIST_FILE, header=None, names=OLD_COLUMNS)
+            hist.insert(1, "Ubicación", "")
+            hist.insert(2, "Operador",  "")
+            hist.insert(3, "Notas",     "")
+        
+        hist["Fecha"]         = pd.to_datetime(hist["Fecha"], errors='coerce')
         hist["Impacto total"] = pd.to_numeric(hist["Impacto total"], errors='coerce').fillna(0)
-        hist["Fauna afectada"] = pd.to_numeric(hist["Fauna afectada"], errors='coerce').fillna(0)
+        hist["Fauna afectada"]= pd.to_numeric(hist["Fauna afectada"], errors='coerce').fillna(0)
         hist = hist.dropna(subset=["Fecha"])
+        hist = hist[HIST_COLUMNS]
         return hist
     except Exception as e:
         st.warning(f"Aviso al leer historial: {e}")
@@ -766,12 +781,21 @@ elif selec == "Panel de Resultados":
     st.title("📈 Dashboard de Impacto Acumulado")
 
     # Controles superiores
-    col_del, col_exp, _ = st.columns([1, 1, 3])
+    col_del, col_export, _ = st.columns([1, 1, 3])
     if col_del.button("⚠️ Borrar Historial", type="secondary"):
         if os.path.exists(HIST_FILE):
             os.remove(HIST_FILE)
             st.success("Historial borrado.")
             st.rerun()
+
+    # Exportar historial como CSV descargable
+    if os.path.exists(HIST_FILE):
+        with open(HIST_FILE, 'rb') as f:
+            col_export.download_button(
+                "📥 Exportar CSV", f.read(),
+                file_name=f"historial_iiae_{datetime.date.today()}.csv",
+                mime="text/csv", use_container_width=True
+            )
 
     hist = load_historial()
 
@@ -779,8 +803,19 @@ elif selec == "Panel de Resultados":
         st.info("📭 No hay datos históricos. Registra tu primera campaña en 'Análisis Ambiental'.")
         st.stop()
 
-    # Columna de kg calculada robustamente
-    hist["kgs"] = hist["Cantidades (kg)"].apply(lambda s: sum(parse_list_string(s)))
+    # Columna de kg: parsear cantidades de forma robusta
+    def safe_kg_sum(s):
+        vals = parse_list_string(s)
+        return sum(v for v in vals if v > 0) if vals else 0.0
+
+    hist["kgs"] = hist["Cantidades (kg)"].apply(safe_kg_sum)
+    
+    # Sanity check: si todos los kgs son 0 pero hay impacto, el CSV está mal parseado
+    if hist["kgs"].sum() == 0 and hist["Impacto total"].sum() > 0:
+        st.error("⚠️ **Problema con el formato del historial.** Los datos anteriores tienen un formato "
+                 "incompatible con la versión actual. Por favor, borra el historial y registra "
+                 "las campañas de nuevo con el formulario actualizado.")
+        st.stop()
 
     # ── Métricas globales ──
     t_iiae  = hist["Impacto total"].sum()
