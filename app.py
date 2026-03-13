@@ -375,8 +375,59 @@ hr {{
 
 footer {{ visibility: hidden; }}
 #MainMenu {{ visibility: hidden; }}
-[data-testid="stToolbar"] {{ display: none; }}
 [data-testid="stDecoration"] {{ display: none; }}
+
+/* SIDEBAR TOGGLE BUTTON — siempre visible y bien estilizado */
+[data-testid="stSidebarCollapsedControl"] {{
+    background: #0D3529 !important;
+    border-radius: 0 12px 12px 0 !important;
+    width: 28px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    box-shadow: 3px 0 12px rgba(0,0,0,0.18) !important;
+    border: none !important;
+    opacity: 1 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 999 !important;
+    transition: background 0.2s ease !important;
+}}
+[data-testid="stSidebarCollapsedControl"]:hover {{
+    background: #195c47 !important;
+    width: 32px !important;
+}}
+[data-testid="stSidebarCollapsedControl"] button {{
+    color: #47d7ac !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-size: 1rem !important;
+}}
+[data-testid="stSidebarCollapsedControl"] svg {{
+    fill: #47d7ac !important;
+    stroke: #47d7ac !important;
+    width: 14px !important;
+    height: 14px !important;
+}}
+
+/* Flecha dentro del sidebar (collapse button) */
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {{
+    background: rgba(255,255,255,0.06) !important;
+    border-radius: 8px !important;
+    color: rgba(255,255,255,0.5) !important;
+    transition: all 0.15s !important;
+}}
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"]:hover {{
+    background: rgba(255,255,255,0.12) !important;
+    color: #47d7ac !important;
+}}
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {{
+    fill: currentColor !important;
+    stroke: currentColor !important;
+}}
 
 </style>
 """, unsafe_allow_html=True)
