@@ -110,34 +110,40 @@ h4, h5 {{
     border-radius: 0 !important;
 }}
 
-/* Botones navegacion sidebar */
+/* Botones navegacion sidebar — sin bordes, sin cambio de fondo */
 [data-testid="stSidebar"] button {{
     width: 100% !important;
     background: transparent !important;
-    color: rgba(255,255,255,0.55) !important;
+    color: rgba(255,255,255,0.52) !important;
     text-align: left !important;
-    padding: 9px 22px !important;
+    padding: 10px 22px !important;
     border: none !important;
     border-radius: 0 !important;
-    border-left: 2px solid transparent !important;
+    box-shadow: none !important;
     font-family: 'DM Sans', sans-serif !important;
     font-size: 0.84rem !important;
     font-weight: 400 !important;
     letter-spacing: 0.1px !important;
-    transition: all 0.15s ease !important;
-    margin: 1px 0 !important;
+    transition: color 0.15s ease !important;
+    margin: 0 !important;
 }}
 [data-testid="stSidebar"] button:hover {{
-    background: rgba(255,255,255,0.06) !important;
-    color: rgba(255,255,255,0.88) !important;
-    border-left-color: rgba(71,215,172,0.35) !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.85) !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 [data-testid="stSidebar"] button[kind="primary"] {{
-    background: rgba(71,215,172,0.09) !important;
-    color: #47d7ac !important;
+    background: transparent !important;
+    color: white !important;
     font-weight: 600 !important;
-    border-left: 2px solid #47d7ac !important;
-    letter-spacing: 0.15px !important;
+    border: none !important;
+    box-shadow: none !important;
+}}
+[data-testid="stSidebar"] button[kind="secondary"] {{
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 
 /* TARJETAS METRICAS */
@@ -703,14 +709,14 @@ PAGINAS = {
 with st.sidebar:
     # ── Logo y título ──
     st.markdown(f"""
-<div style='padding: 28px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 6px;'>
-  <div style='display:flex;align-items:center;gap:10px;margin-bottom:6px;'>
-    <div style='width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:10px;
-                display:flex;align-items:center;justify-content:center;font-size:1.3em;flex-shrink:0;'>🌿</div>
+<div style='padding:28px 20px 18px;border-bottom:1px solid rgba(255,255,255,0.1);margin-bottom:4px;'>
+  <div style='display:flex;align-items:center;gap:11px;'>
+    <div style='width:34px;height:34px;background:rgba(255,255,255,0.12);border-radius:9px;
+                display:flex;align-items:center;justify-content:center;font-size:1.2em;flex-shrink:0;'>🌿</div>
     <div>
-      <div style='font-family:"Fraunces",serif;color:white;font-size:1.15rem;
-                  line-height:1.1;font-weight:400;'>IIAE Biobardas</div>
-      <div style='font-size:0.68rem;color:rgba(255,255,255,0.5);letter-spacing:0.8px;
+      <div style='font-family:"Fraunces",serif;color:white;font-size:1.08rem;
+                  line-height:1.15;font-weight:400;font-style:italic;'>IIAE Biobardas</div>
+      <div style='font-size:0.62rem;color:rgba(255,255,255,0.42);letter-spacing:0.9px;
                   text-transform:uppercase;margin-top:2px;'>Sistema de Gestión Ambiental</div>
     </div>
   </div>
@@ -720,7 +726,7 @@ with st.sidebar:
     if "page" not in st.session_state:
         st.session_state["page"] = "Inicio"
 
-    st.markdown("<div style='padding: 10px 12px 6px;'>", unsafe_allow_html=True)
+    st.markdown("<div style='padding:8px 0 0;'>", unsafe_allow_html=True)
     for label, key in PAGINAS.items():
         is_active = st.session_state["page"] == key
         btn_type  = "primary" if is_active else "secondary"
@@ -729,15 +735,14 @@ with st.sidebar:
             st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
 
-    # ── Footer con autoría ──
+    # ── Autor — al final del flujo normal, sin position:absolute ──
     st.markdown(f"""
-<div style='position:absolute;bottom:0;left:0;right:0;padding:16px 20px;
-            border-top:1px solid rgba(255,255,255,0.1);'>
-  <div style='font-size:0.68rem;color:rgba(255,255,255,0.4);line-height:1.7;'>
-    <div style='font-weight:600;color:rgba(255,255,255,0.6);font-size:0.72rem;
-                margin-bottom:3px;letter-spacing:0.2px;'>Pedro Juan García Navarro</div>
+<div style='padding:20px 20px 16px;border-top:1px solid rgba(255,255,255,0.08);margin-top:16px;'>
+  <div style='font-size:0.67rem;color:rgba(255,255,255,0.35);line-height:1.8;'>
+    <div style='font-weight:600;color:rgba(255,255,255,0.55);font-size:0.7rem;
+                margin-bottom:1px;'>Pedro Juan García Navarro</div>
     <div>TFG · Universidad de Montevideo</div>
-    <div style='margin-top:4px;color:rgba(255,255,255,0.25);'>v2.1 · {datetime.date.today().year}</div>
+    <div style='margin-top:3px;color:rgba(255,255,255,0.2);letter-spacing:0.2px;'>v2.1 · {datetime.date.today().year}</div>
   </div>
 </div>
     """, unsafe_allow_html=True)
