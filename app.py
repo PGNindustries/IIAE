@@ -18,8 +18,10 @@ st.set_page_config(
     menu_items={
         "Get help":     "mailto:pedro@biobardas.org",
         "Report a bug": "https://github.com/PGNindu/IIAE",
-        "About":        "**IIAE Biobardas** · TFG Universidad de Montevideo · 2026\n\n"
+        "About":        "**IIAE Biobardas** · TFG · 2026\n\n"
                         "Desarrollado por Pedro Juan García Navarro.\n"
+                        "Universidad Miguel Hernández de Elche (Ingeniería Eléctrica)\n"
+                        "en colaboración con la Universidad de Montevideo.\n"
                         "Sistema de cuantificación del Índice de Impacto Ambiental Evitado."
     }
 )
@@ -459,7 +461,7 @@ footer {{ visibility: hidden; }}
 # Watermark de autoria fijo
 st.markdown("""
 <div class="watermark-autoria">
-    Pedro Juan Garcia Navarro &middot; TFG Universidad de Montevideo<br>
+    Pedro Juan García Navarro &middot; UMH Elche · Univ. de Montevideo<br>
     &copy; 2026 &middot; Todos los derechos reservados
 </div>
 """, unsafe_allow_html=True)
@@ -477,7 +479,7 @@ HIST_COLUMNS      = ["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "Canti
 
 # Índices IIAE según la fórmula oficial del TFG:
 # IIAE = (PMA·0.30) + (PMI·0.25) + (PRE·0.30) + (PPA·0.15)
-# Fuente: "Índice de Impacto Ambiental Evitado – Biobardas / Univ. de Montevideo"
+# Fuente: "Índice de Impacto Ambiental Evitado – Biobardas / UMH Elche & Univ. de Montevideo"
 DEF_PLASTICS = {
     'EPS':  {"indice": 3.95, "vida": 50,   "pma": 4.00, "pmi": 5.00, "pre": 4.25, "ppa": 1.50},
     'PP':   {"indice": 3.83, "vida": 80,   "pma": 4.58, "pmi": 4.88, "pre": 3.00, "ppa": 2.25},
@@ -759,7 +761,7 @@ with st.sidebar:
   <div style='font-size:0.67rem;color:rgba(255,255,255,0.35);line-height:1.8;'>
     <div style='font-weight:600;color:rgba(255,255,255,0.55);font-size:0.7rem;
                 margin-bottom:1px;'>Pedro Juan García Navarro</div>
-    <div>TFG · Universidad de Montevideo</div>
+    <div>Ingeniería Eléctrica · UMH Elche &amp; Univ. Montevideo</div>
     <div style='margin-top:3px;color:rgba(255,255,255,0.2);letter-spacing:0.2px;'>v3.0 · {datetime.date.today().year}</div>
   </div>
 </div>
@@ -920,7 +922,7 @@ code { background: #F0EDE3; padding: 1px 5px; border-radius: 4px; font-size: 0.7
           <div class="step"><div class="num">2</div><span>Edita un material escribiendo su nombre exacto</span></div>
           <div class="step"><div class="num">3</div><span><strong>Restablecer</strong> vuelve a los valores del PDF del TFG</span></div>
         </div>
-        <div class="tip">💡 Índices basados en el TFG de la Universidad de Montevideo (2026).</div>
+        <div class="tip">💡 Índices basados en el TFG — UMH Elche &amp; Universidad de Montevideo (2026).</div>
       </div>
 
       <div class="card">
@@ -1011,7 +1013,7 @@ if selec == "Inicio":
   <div style='font-size:1.4em;'>🎓</div>
   <div>
     <div style='font-size:0.8rem;font-weight:600;color:{COLOR_PRIMARY};'>Pedro Juan García Navarro</div>
-    <div style='font-size:0.75rem;color:#777;'>Trabajo de Fin de Grado · Universidad de Montevideo · 2026</div>
+    <div style='font-size:0.75rem;color:#777;'>Trabajo de Fin de Grado · Ingeniería Eléctrica · UMH Elche &amp; Universidad de Montevideo · 2026</div>
   </div>
 </div>
         """, unsafe_allow_html=True)
@@ -1591,7 +1593,7 @@ elif selec == "Huella de Carbono":
 elif selec == "Modelo de Cálculo":
     plastics = load_plastics()
     st.title("🧮 Modelo Matemático IIAE")
-    st.markdown("Metodología científica del *Índice de Impacto Ambiental Evitado*. Biobardas / Universidad de Montevideo.")
+    st.markdown("Metodología científica del *Índice de Impacto Ambiental Evitado*. Biobardas / UMH Elche &amp; Universidad de Montevideo.")
 
     tab1, tab2, tab3, tab4 = st.tabs(["Fórmula IIAE", "Criterios y Pesos", "Tabla de Polímeros", "Simulador"])
 
@@ -1685,7 +1687,7 @@ elif selec == "Modelo de Cálculo":
         """, unsafe_allow_html=True)
 
     with tab3:
-        st.markdown("**Índices IIAE por polímero — Tabla Final del TFG (Biobardas / Univ. de Montevideo):**")
+        st.markdown("**Índices IIAE por polímero — Tabla Final del TFG (Biobardas / UMH Elche &amp; Univ. de Montevideo):**")
 
         tabla_oficial = [
             {"Rg": "🥇 1", "Polímero": "EPS",  "P_MA": 4.00, "P_MI": 5.00, "P_RE": 4.25, "P_PA": 1.50, "IIAE": 3.95, "Vida (años)": "~50",   "Peligrosidad": "🔴 Alta"},
