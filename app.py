@@ -31,7 +31,7 @@ import plotly.io as pio
 custom_template = go.layout.Template()
 custom_template.layout.plot_bgcolor  = '#fcfcf8'
 custom_template.layout.paper_bgcolor = COLOR_BG
-custom_template.layout.font          = dict(color=COLOR_PRIMARY, family="Montserrat, Arial, sans-serif")
+custom_template.layout.font          = dict(color="#1C1C1C", family="DM Sans, Arial, sans-serif")
 custom_template.layout.xaxis        = dict(gridcolor=COLOR_GRID, zeroline=False, showgrid=True)
 custom_template.layout.yaxis        = dict(gridcolor=COLOR_GRID, zeroline=False, showgrid=True)
 custom_template.layout.legend       = dict(bgcolor='rgba(255,255,255,0.5)', bordercolor=COLOR_GRID)
@@ -40,154 +40,353 @@ custom_template.layout.margin       = dict(t=50, b=40, l=40, r=40)
 pio.templates["biobardas"] = custom_template
 pio.templates.default      = "biobardas"
 
-# --- CSS ---
+# --- CSS PROFESIONAL DEFINITIVO ---
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;1,9..144,300;1,9..144,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap');
 
+/* BASE */
+*, *::before, *::after {{ box-sizing: border-box; }}
 html, body, .stApp {{
-    background: linear-gradient(135deg, #f9f7e3 0%, #e7e7c0 100%) !important;
-    font-family: 'Montserrat', sans-serif;
-    color: {COLOR_PRIMARY};
+    background: #EDEAE0 !important;
+    font-family: 'DM Sans', sans-serif;
+    color: #1C1C1C;
+    -webkit-font-smoothing: antialiased;
 }}
 
-h1, h2, h3, h4, h5 {{
-    color: {COLOR_PRIMARY} !important;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-}}
-
+/* AREA PRINCIPAL */
 .block-container {{
-    background-color: {COLOR_BG};
-    border-radius: 25px;
-    padding: 2.5rem 2rem;
-    box-shadow: 0 10px 30px -5px rgba(23,87,74,0.09);
+    background: #F8F6F0;
+    border-radius: 24px;
+    padding: 3rem 3rem 3.5rem;
+    box-shadow: 0 0 0 1px rgba(23,87,74,0.06), 0 4px 6px rgba(0,0,0,0.04), 0 20px 48px rgba(23,87,74,0.07);
     margin-top: 20px;
+    max-width: 1180px;
+}}
+
+/* TIPOGRAFIA */
+h1 {{
+    font-family: 'Fraunces', serif !important;
+    color: {COLOR_PRIMARY} !important;
+    font-size: 2.3rem !important;
+    font-weight: 400 !important;
+    font-style: italic !important;
+    letter-spacing: -1px !important;
+    line-height: 1.15 !important;
+    margin-bottom: 0.2rem !important;
+}}
+h2 {{
+    font-family: 'DM Sans', sans-serif !important;
+    color: {COLOR_PRIMARY} !important;
+    font-size: 1.2rem !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.3px !important;
+}}
+h3 {{
+    font-family: 'DM Sans', sans-serif !important;
+    color: {COLOR_PRIMARY} !important;
+    font-weight: 600 !important;
+    font-size: 1.02rem !important;
+}}
+h4, h5 {{
+    color: {COLOR_PRIMARY} !important;
+    font-weight: 600 !important;
+    font-family: 'DM Sans', sans-serif !important;
 }}
 
 /* SIDEBAR */
 [data-testid="stSidebar"] {{
-    background-color: #fdfdfa;
-    border-right: 1px solid {COLOR_GRID};
+    background: #0D3529 !important;
+    border-right: none !important;
+}}
+[data-testid="stSidebar"] > div:first-child {{
+    background: #0D3529 !important;
 }}
 [data-testid="stSidebar"] .block-container {{
-    background: transparent;
-    box-shadow: none;
-    padding: 1.5rem 1rem;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
 }}
 
-/* BOTONES SIDEBAR */
+/* Botones navegacion sidebar */
 [data-testid="stSidebar"] button {{
-    width: 100%;
-    background-color: transparent;
-    color: {COLOR_PRIMARY};
-    text-align: left;
-    padding: 8px 15px;
-    border: 1px solid transparent;
-    border-radius: 10px;
-    transition: all 0.2s ease;
-    font-family: 'Montserrat', sans-serif;
-    font-weight: 500;
+    width: 100% !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.55) !important;
+    text-align: left !important;
+    padding: 9px 22px !important;
+    border: none !important;
+    border-radius: 0 !important;
+    border-left: 2px solid transparent !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.84rem !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.1px !important;
+    transition: all 0.15s ease !important;
+    margin: 1px 0 !important;
 }}
 [data-testid="stSidebar"] button:hover {{
-    background-color: #e7e7c0;
-    border-color: {COLOR_GRID};
+    background: rgba(255,255,255,0.06) !important;
+    color: rgba(255,255,255,0.88) !important;
+    border-left-color: rgba(71,215,172,0.35) !important;
 }}
 [data-testid="stSidebar"] button[kind="primary"] {{
-    background-color: {COLOR_PRIMARY} !important;
-    color: white !important;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(23,87,74,0.25);
+    background: rgba(71,215,172,0.09) !important;
+    color: #47d7ac !important;
+    font-weight: 600 !important;
+    border-left: 2px solid #47d7ac !important;
+    letter-spacing: 0.15px !important;
+}}
+
+/* TARJETAS METRICAS */
+.metric-card {{
+    background: #FFFFFF;
+    border-radius: 16px;
+    padding: 22px 18px 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 14px rgba(0,0,0,0.04);
+    text-align: center;
+    margin-bottom: 12px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+    position: relative;
+    overflow: hidden;
+}}
+.metric-card::after {{
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: {COLOR_PRIMARY};
+}}
+.metric-card.accent::after {{ background: {COLOR_ACCENT}; }}
+.metric-card.warn::after   {{ background: {COLOR_WARN}; }}
+.metric-card:hover {{
+    transform: translateY(-3px);
+    box-shadow: 0 10px 32px rgba(23,87,74,0.13);
+}}
+.metric-value {{
+    font-family: 'Fraunces', serif;
+    font-size: 2rem;
+    font-weight: 300;
+    color: {COLOR_PRIMARY};
+    margin: 4px 0 0;
+    line-height: 1.05;
+    letter-spacing: -1px;
+}}
+.metric-label {{
+    font-size: 0.7rem;
+    color: #AAA;
+    margin-top: 7px;
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.9px;
+    font-family: 'DM Sans', sans-serif;
+}}
+.metric-icon {{
+    font-size: 1.1em;
+    margin-bottom: 2px;
+    opacity: 0.65;
+    display: block;
 }}
 
 /* TABLAS */
 .stDataFrame {{
-    border: 1px solid {COLOR_GRID} !important;
+    border: 1px solid #E5E2D8 !important;
     border-radius: 12px !important;
-    overflow: hidden;
+    overflow: hidden !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
 }}
 [data-testid="stDataFrame"] thead th {{
-    background-color: #e7e7c0 !important;
+    background: #EFECE4 !important;
     color: {COLOR_PRIMARY} !important;
-    font-weight: 700 !important;
-    border-bottom: 2px solid {COLOR_PRIMARY} !important;
+    font-weight: 600 !important;
+    font-size: 0.71rem !important;
+    letter-spacing: 0.8px !important;
+    text-transform: uppercase !important;
+    padding: 10px 14px !important;
+    border-bottom: 1px solid #DDD8CC !important;
+    font-family: 'DM Sans', sans-serif !important;
+}}
+[data-testid="stDataFrame"] tbody tr:hover > div {{
+    background: rgba(71,215,172,0.05) !important;
 }}
 
-/* TARJETAS MÉTRICAS */
-.metric-card {{
-    background: linear-gradient(145deg, #ffffff, #f0f0eb);
-    border-radius: 16px;
-    padding: 20px 16px;
-    border-left: 5px solid {COLOR_PRIMARY};
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-    text-align: center;
-    margin-bottom: 15px;
-    transition: transform 0.2s, box-shadow 0.2s;
+/* FORMULARIOS — Labels */
+.stNumberInput label, .stTextInput label, .stTextArea label,
+.stSelectbox label, .stDateInput label, .stTimeInput label {{
+    font-size: 0.72rem !important;
+    font-weight: 600 !important;
+    color: #888 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.7px !important;
+    font-family: 'DM Sans', sans-serif !important;
 }}
-.metric-card:hover {{
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(23,87,74,0.15);
-}}
-.metric-card.accent {{ border-left-color: {COLOR_ACCENT}; }}
-.metric-card.warn   {{ border-left-color: {COLOR_WARN}; }}
-.metric-value {{
-    font-size: 1.75em;
-    font-weight: 800;
-    color: {COLOR_PRIMARY};
-    margin: 0;
-    line-height: 1.2;
-}}
-.metric-label {{
-    font-size: 0.88em;
-    color: #666;
-    margin-top: 6px;
-    font-weight: 500;
-}}
-.metric-icon {{ font-size: 1.4em; margin-bottom: 4px; }}
 
-/* FORMULARIOS */
-.stNumberInput input, .stTextInput input {{
+/* FORMULARIOS — Inputs */
+.stNumberInput input, .stTextInput input, .stTextArea textarea {{
     border-radius: 8px !important;
-    border: 1px solid {COLOR_GRID} !important;
-    font-family: 'Montserrat', sans-serif !important;
+    border: 1.5px solid #DDD8CC !important;
+    font-family: 'DM Sans', sans-serif !important;
+    background: #FFFFFF !important;
+    color: #1C1C1C !important;
+    font-size: 0.88rem !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
 }}
-.stNumberInput input:focus, .stTextInput input:focus {{
+.stNumberInput input:focus, .stTextInput input:focus, .stTextArea textarea:focus {{
     border-color: {COLOR_PRIMARY} !important;
-    box-shadow: 0 0 0 2px rgba(23,87,74,0.15) !important;
+    box-shadow: 0 0 0 3px rgba(23,87,74,0.08) !important;
+    outline: none !important;
 }}
 
-/* BOTÓN PRINCIPAL */
+/* BOTONES */
 button[kind="primary"] {{
-    background-color: {COLOR_PRIMARY} !important;
-    border-radius: 10px !important;
-    font-weight: 700 !important;
-    font-family: 'Montserrat', sans-serif !important;
-    letter-spacing: 0.3px;
-    transition: all 0.2s !important;
+    background: {COLOR_PRIMARY} !important;
+    border-radius: 9px !important;
+    font-weight: 600 !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.87rem !important;
+    letter-spacing: 0.2px !important;
+    transition: all 0.18s ease !important;
+    border: none !important;
 }}
 button[kind="primary"]:hover {{
-    background-color: #0f3d32 !important;
-    box-shadow: 0 4px 14px rgba(23,87,74,0.3) !important;
+    background: #0B2820 !important;
+    box-shadow: 0 5px 22px rgba(23,87,74,0.3) !important;
+    transform: translateY(-1px) !important;
+}}
+button[kind="secondary"] {{
+    border-radius: 9px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.84rem !important;
+    border: 1.5px solid #DDD8CC !important;
+    color: #666 !important;
+    background: white !important;
+    font-weight: 500 !important;
+    transition: all 0.15s !important;
+}}
+button[kind="secondary"]:hover {{
+    border-color: {COLOR_PRIMARY} !important;
+    color: {COLOR_PRIMARY} !important;
+    background: rgba(23,87,74,0.03) !important;
 }}
 
 /* EXPANDERS */
 details {{
     border-radius: 12px !important;
-    border: 1px solid {COLOR_GRID} !important;
-    padding: 4px 8px;
+    border: 1.5px solid #E5E2D8 !important;
+    background: #FFFFFF !important;
+    padding: 0 8px !important;
+    margin-bottom: 6px !important;
+    transition: box-shadow 0.15s !important;
+}}
+details[open] {{
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06) !important;
+}}
+details summary {{
+    font-weight: 600 !important;
+    color: {COLOR_PRIMARY} !important;
+    font-size: 0.87rem !important;
+    padding: 12px 6px !important;
+    letter-spacing: 0.1px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    cursor: pointer;
 }}
 
-.stAlert {{ border-radius: 12px; }}
-hr {{ border-color: {COLOR_GRID}; border-style: dashed; margin: 25px 0; }}
-footer {{ visibility: hidden; }}
+/* TABS */
+[data-testid="stTabs"] {{
+    border-bottom: 1px solid #E5E2D8 !important;
+}}
+[data-testid="stTabs"] [data-baseweb="tab"] {{
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 500 !important;
+    font-size: 0.84rem !important;
+    color: #AAA !important;
+    padding: 10px 18px !important;
+    transition: color 0.15s !important;
+}}
+[data-testid="stTabs"] [aria-selected="true"] {{
+    color: {COLOR_PRIMARY} !important;
+    font-weight: 700 !important;
+}}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"] {{
+    background: {COLOR_PRIMARY} !important;
+    height: 2px !important;
+}}
+
+/* SELECTBOX */
+[data-testid="stSelectbox"] > div > div {{
+    border-radius: 8px !important;
+    border: 1.5px solid #DDD8CC !important;
+    background: #FFFFFF !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.88rem !important;
+}}
+
+/* ALERTAS */
+.stAlert {{
+    border-radius: 10px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-size: 0.87rem !important;
+    border: none !important;
+}}
+
+/* SEPARADORES */
+hr {{
+    border: none !important;
+    border-top: 1px solid #E5E2D8 !important;
+    margin: 28px 0 !important;
+}}
 
 /* PROGRESS BAR */
 .stProgress > div > div {{
-    background-color: {COLOR_PRIMARY} !important;
-    border-radius: 4px;
+    background: {COLOR_PRIMARY} !important;
+    border-radius: 4px !important;
 }}
+
+/* SECCION CHIP — etiqueta decorativa */
+.section-chip {{
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: {COLOR_PRIMARY};
+    background: rgba(23,87,74,0.08);
+    border-radius: 20px;
+    padding: 3px 10px;
+    margin-bottom: 8px;
+    font-family: 'DM Sans', sans-serif;
+}}
+
+/* WATERMARK */
+.watermark-autoria {{
+    position: fixed;
+    bottom: 14px; right: 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.67rem;
+    color: rgba(23,87,74,0.28);
+    letter-spacing: 0.3px;
+    pointer-events: none;
+    z-index: 9999;
+    text-align: right;
+    line-height: 1.6;
+}}
+
+footer {{ visibility: hidden; }}
+#MainMenu {{ visibility: hidden; }}
+[data-testid="stToolbar"] {{ display: none; }}
+[data-testid="stDecoration"] {{ display: none; }}
+
 </style>
+""", unsafe_allow_html=True)
+
+# Watermark de autoria fijo
+st.markdown("""
+<div class="watermark-autoria">
+    Pedro Juan Garcia Navarro &middot; TFG Universidad de Montevideo<br>
+    &copy; 2026 &middot; Todos los derechos reservados
+</div>
 """, unsafe_allow_html=True)
 
 
@@ -451,28 +650,46 @@ PAGINAS = {
 }
 
 with st.sidebar:
-    st.markdown(
-        f"<h2 style='text-align:center;color:{COLOR_PRIMARY};margin-bottom:8px;line-height:1.3'>🌿 IIAE<br>Biobardas</h2>"
-        f"<p style='text-align:center;font-size:0.78em;color:#888;margin-bottom:20px;'>Sistema de Gestión Ambiental</p>",
-        unsafe_allow_html=True
-    )
-    st.markdown("---")
+    # ── Logo y título ──
+    st.markdown(f"""
+<div style='padding: 28px 20px 20px; border-bottom: 1px solid rgba(255,255,255,0.12); margin-bottom: 6px;'>
+  <div style='display:flex;align-items:center;gap:10px;margin-bottom:6px;'>
+    <div style='width:36px;height:36px;background:rgba(255,255,255,0.15);border-radius:10px;
+                display:flex;align-items:center;justify-content:center;font-size:1.3em;flex-shrink:0;'>🌿</div>
+    <div>
+      <div style='font-family:"Fraunces",serif;color:white;font-size:1.15rem;
+                  line-height:1.1;font-weight:400;'>IIAE Biobardas</div>
+      <div style='font-size:0.68rem;color:rgba(255,255,255,0.5);letter-spacing:0.8px;
+                  text-transform:uppercase;margin-top:2px;'>Sistema de Gestión Ambiental</div>
+    </div>
+  </div>
+</div>
+    """, unsafe_allow_html=True)
 
     if "page" not in st.session_state:
         st.session_state["page"] = "Inicio"
 
+    st.markdown("<div style='padding: 10px 12px 6px;'>", unsafe_allow_html=True)
     for label, key in PAGINAS.items():
         is_active = st.session_state["page"] == key
         btn_type  = "primary" if is_active else "secondary"
         if st.button(label, key=f"nav_{key}", use_container_width=True, type=btn_type):
             st.session_state["page"] = key
             st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.markdown(
-        f"<p style='font-size:0.75em;color:#aaa;text-align:center;'>v2.0 · {datetime.date.today().year}</p>",
-        unsafe_allow_html=True
-    )
+    # ── Footer con autoría ──
+    st.markdown(f"""
+<div style='position:absolute;bottom:0;left:0;right:0;padding:16px 20px;
+            border-top:1px solid rgba(255,255,255,0.1);'>
+  <div style='font-size:0.68rem;color:rgba(255,255,255,0.4);line-height:1.7;'>
+    <div style='font-weight:600;color:rgba(255,255,255,0.6);font-size:0.72rem;
+                margin-bottom:3px;letter-spacing:0.2px;'>Pedro Juan García Navarro</div>
+    <div>TFG · Universidad de Montevideo</div>
+    <div style='margin-top:4px;color:rgba(255,255,255,0.25);'>v2.1 · {datetime.date.today().year}</div>
+  </div>
+</div>
+    """, unsafe_allow_html=True)
 
 selec = st.session_state["page"]
 
@@ -486,27 +703,53 @@ if selec == "Inicio":
     col_txt, col_img = st.columns([1.6, 1])
 
     with col_txt:
-        st.title("🌿 IIAE Biobardas")
-        st.markdown(
-            f"<h3 style='color:{COLOR_ACCENT};font-weight:600;margin-top:-10px'>"
-            "Innovación aplicada a la protección de nuestros ríos</h3>",
-            unsafe_allow_html=True
-        )
-        st.markdown("---")
         st.markdown(f"""
-        <div style='background:rgba(71,215,172,0.1);padding:22px;border-radius:15px;
-                    border-left:5px solid {COLOR_PRIMARY};'>
-          <h4 style='margin-top:0;color:{COLOR_PRIMARY}'>Bienvenido al sistema de gestión</h4>
-          <p style='margin-bottom:10px'>Esta herramienta cuantifica científicamente el beneficio ambiental
-          de las labores de limpieza en ríos mediante el <strong>Índice de Impacto Ambiental Evitado (IIAE)</strong>.</p>
-          <ul style='margin:0;padding-left:20px;line-height:2'>
-            <li><b>Calcula</b> el IIAE ponderado por material y persistencia</li>
-            <li><b>Analiza</b> la peligrosidad real más allá del peso</li>
-            <li><b>Visualiza</b> tendencias acumuladas e historial</li>
-            <li><b>Genera</b> informes técnicos en PDF</li>
-            <li><b>Estima</b> la huella de CO₂ evitada</li>
-          </ul>
-        </div>
+<div style='margin-bottom:6px;'>
+  <span style='font-size:0.75rem;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;
+               color:{COLOR_ACCENT};font-family:"DM Sans",sans-serif;'>
+    Sistema de Gestión Ambiental · TFG
+  </span>
+</div>
+        """, unsafe_allow_html=True)
+        st.title("IIAE Biobardas")
+        st.markdown(f"""
+<p style='font-size:1.05rem;color:#555;margin-top:-10px;margin-bottom:24px;font-weight:400;
+          font-family:"DM Sans",sans-serif;line-height:1.6;'>
+  Cuantificación científica del beneficio ambiental de las labores de limpieza en ríos
+  mediante el <em>Índice de Impacto Ambiental Evitado</em>.
+</p>
+
+<div style='display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;'>
+  <div style='background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;'>
+    <div style='font-size:1.2em;margin-bottom:4px;'>📐</div>
+    <div style='font-weight:600;font-size:0.88rem;color:{COLOR_PRIMARY};margin-bottom:3px;'>Calcula el IIAE</div>
+    <div style='font-size:0.8rem;color:#777;'>Ponderado por material, peligrosidad y persistencia</div>
+  </div>
+  <div style='background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;'>
+    <div style='font-size:1.2em;margin-bottom:4px;'>⚖️</div>
+    <div style='font-weight:600;font-size:0.88rem;color:{COLOR_PRIMARY};margin-bottom:3px;'>Analiza la peligrosidad</div>
+    <div style='font-size:0.8rem;color:#777;'>Más allá del peso: impacto real por polímero</div>
+  </div>
+  <div style='background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;'>
+    <div style='font-size:1.2em;margin-bottom:4px;'>📈</div>
+    <div style='font-weight:600;font-size:0.88rem;color:{COLOR_PRIMARY};margin-bottom:3px;'>Visualiza tendencias</div>
+    <div style='font-size:0.8rem;color:#777;'>Historial acumulado y análisis temporal</div>
+  </div>
+  <div style='background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #eee;'>
+    <div style='font-size:1.2em;margin-bottom:4px;'>📄</div>
+    <div style='font-weight:600;font-size:0.88rem;color:{COLOR_PRIMARY};margin-bottom:3px;'>Genera informes PDF</div>
+    <div style='font-size:0.8rem;color:#777;'>Informes técnicos con datos y gráficas</div>
+  </div>
+</div>
+
+<div style='background:#F0EFE9;border-radius:10px;padding:13px 16px;display:flex;
+            align-items:center;gap:12px;border:1px solid #E0DED6;'>
+  <div style='font-size:1.4em;'>🎓</div>
+  <div>
+    <div style='font-size:0.8rem;font-weight:600;color:{COLOR_PRIMARY};'>Pedro Juan García Navarro</div>
+    <div style='font-size:0.75rem;color:#777;'>Trabajo de Fin de Grado · Universidad de Montevideo · 2026</div>
+  </div>
+</div>
         """, unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
