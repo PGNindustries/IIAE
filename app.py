@@ -11,10 +11,17 @@ from io import BytesIO
 # ==========================================
 
 st.set_page_config(
-    page_title="Modelo IIAE Biobardas",
+    page_title="IIAE Biobardas · TFG",
     page_icon="🌿",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        "Get help":     "mailto:pedro@biobardas.org",
+        "Report a bug": "https://github.com/PGNindu/IIAE",
+        "About":        "**IIAE Biobardas** · TFG Universidad de Montevideo · 2026\n\n"
+                        "Desarrollado por Pedro Juan García Navarro.\n"
+                        "Sistema de cuantificación del Índice de Impacto Ambiental Evitado."
+    }
 )
 
 # --- COLORES CORPORATIVOS ---
@@ -29,8 +36,8 @@ COLOR_DANGER   = '#c0392b'
 import plotly.io as pio
 
 custom_template = go.layout.Template()
-custom_template.layout.plot_bgcolor  = '#fcfcf8'
-custom_template.layout.paper_bgcolor = COLOR_BG
+custom_template.layout.plot_bgcolor  = '#FAFAF7'
+custom_template.layout.paper_bgcolor = '#F8F6F0'
 custom_template.layout.font          = dict(color="#1C1C1C", family="DM Sans, Arial, sans-serif")
 custom_template.layout.xaxis        = dict(gridcolor=COLOR_GRID, zeroline=False, showgrid=True)
 custom_template.layout.yaxis        = dict(gridcolor=COLOR_GRID, zeroline=False, showgrid=True)
@@ -753,7 +760,7 @@ with st.sidebar:
     <div style='font-weight:600;color:rgba(255,255,255,0.55);font-size:0.7rem;
                 margin-bottom:1px;'>Pedro Juan García Navarro</div>
     <div>TFG · Universidad de Montevideo</div>
-    <div style='margin-top:3px;color:rgba(255,255,255,0.2);letter-spacing:0.2px;'>v2.1 · {datetime.date.today().year}</div>
+    <div style='margin-top:3px;color:rgba(255,255,255,0.2);letter-spacing:0.2px;'>v3.0 · {datetime.date.today().year}</div>
   </div>
 </div>
     """, unsafe_allow_html=True)
@@ -968,7 +975,7 @@ if selec == "Inicio":
   </span>
 </div>
         """, unsafe_allow_html=True)
-        st.title("IIAE Biobardas")
+        st.markdown(f'<h1 style="font-family:Fraunces,serif;font-size:2.6rem;font-weight:400;font-style:italic;color:{COLOR_PRIMARY};letter-spacing:-1px;line-height:1.15;margin:4px 0 10px;">IIAE Biobardas</h1>', unsafe_allow_html=True)
         st.markdown(f"""
 <p style='font-size:1.05rem;color:#555;margin-top:-10px;margin-bottom:24px;font-weight:400;
           font-family:"DM Sans",sans-serif;line-height:1.6;'>
@@ -1052,7 +1059,7 @@ if selec == "Inicio":
 # ---- ANÁLISIS AMBIENTAL ----
 elif selec == "Análisis Ambiental":
     plastics = load_plastics()
-    st.title("📊 Análisis de Nueva Recogida")
+    st.markdown(f'''<h1 style="font-family:Fraunces,serif;font-size:2.2rem;font-weight:400;font-style:italic;color:{COLOR_PRIMARY};letter-spacing:-0.5px;margin-bottom:0.1rem;">Análisis de Recogida</h1>''', unsafe_allow_html=True)
 
     # ── Gestión de materiales ──
     with st.expander("⚙️ Gestión de Índices y Materiales"):
@@ -1278,7 +1285,7 @@ elif selec == "Análisis Ambiental":
 # ---- PANEL DE RESULTADOS ----
 elif selec == "Panel de Resultados":
     plastics = load_plastics()
-    st.title("📈 Dashboard de Impacto Acumulado")
+    st.markdown(f'''<h1 style="font-family:Fraunces,serif;font-size:2.2rem;font-weight:400;font-style:italic;color:{COLOR_PRIMARY};letter-spacing:-0.5px;margin-bottom:0.1rem;">Dashboard de Impacto</h1>''', unsafe_allow_html=True)
 
     # Controles superiores
     col_del, col_export, _ = st.columns([1, 1, 3])
