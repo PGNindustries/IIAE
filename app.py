@@ -419,20 +419,31 @@ footer {{ visibility: hidden; }}
     height: 14px !important;
 }}
 
-/* Flecha dentro del sidebar (collapse button) */
+/* Flecha dentro del sidebar (collapse button) — siempre visible */
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {{
-    background: rgba(255,255,255,0.06) !important;
+    background: transparent !important;
     border-radius: 8px !important;
-    color: rgba(255,255,255,0.5) !important;
+    color: #47d7ac !important;
     transition: all 0.15s !important;
+    border: none !important;
+    box-shadow: none !important;
 }}
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"]:hover {{
-    background: rgba(255,255,255,0.12) !important;
+    background: rgba(71,215,172,0.12) !important;
     color: #47d7ac !important;
 }}
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {{
-    fill: currentColor !important;
-    stroke: currentColor !important;
+    fill: #47d7ac !important;
+    stroke: #47d7ac !important;
+    color: #47d7ac !important;
+    opacity: 1 !important;
+}}
+
+/* Todos los SVG del sidebar en color claro visible */
+[data-testid="stSidebar"] svg {{
+    fill: #47d7ac !important;
+    stroke: #47d7ac !important;
+    opacity: 0.85 !important;
 }}
 
 </style>
@@ -748,6 +759,485 @@ with st.sidebar:
     """, unsafe_allow_html=True)
 
 selec = st.session_state["page"]
+
+# ==========================================
+# MODAL DE BIENVENIDA — TUTORIAL
+# ==========================================
+
+# CSS del modal
+st.markdown("""
+<style>
+.tutorial-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10,30,24,0.72);
+    backdrop-filter: blur(4px);
+    z-index: 99998;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeInOverlay 0.3s ease;
+}
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+.tutorial-modal {
+    background: #F8F6F0;
+    border-radius: 20px;
+    width: min(860px, 92vw);
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.35);
+    animation: slideUpModal 0.35s cubic-bezier(.22,.68,0,1.2);
+    font-family: 'DM Sans', sans-serif;
+    position: relative;
+}
+@keyframes slideUpModal {
+    from { transform: translateY(32px); opacity: 0; }
+    to   { transform: translateY(0);   opacity: 1; }
+}
+.tut-header {
+    background: #0D3529;
+    border-radius: 20px 20px 0 0;
+    padding: 28px 36px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+.tut-header-left { flex: 1; }
+.tut-title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.7rem;
+    font-weight: 400;
+    font-style: italic;
+    color: white;
+    margin: 0 0 4px;
+    line-height: 1.2;
+}
+.tut-subtitle {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.5px;
+}
+.tut-badge {
+    background: rgba(71,215,172,0.15);
+    border: 1px solid rgba(71,215,172,0.3);
+    color: #47d7ac;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+}
+.tut-body { padding: 28px 36px 32px; }
+.tut-intro {
+    font-size: 0.93rem;
+    color: #444;
+    line-height: 1.7;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid #E5E2D8;
+}
+.tut-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+.tut-card {
+    background: white;
+    border-radius: 14px;
+    padding: 20px;
+    border: 1px solid #E8E5DC;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    transition: box-shadow 0.2s;
+}
+.tut-card:hover {
+    box-shadow: 0 4px 20px rgba(23,87,74,0.1);
+}
+.tut-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.tut-card-icon {
+    width: 40px; height: 40px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+.tut-card-icon.green  { background: rgba(23,87,74,0.08);  }
+.tut-card-icon.mint   { background: rgba(71,215,172,0.12); }
+.tut-card-icon.amber  { background: rgba(224,123,57,0.1);  }
+.tut-card-icon.blue   { background: rgba(74,144,226,0.1);  }
+.tut-card-icon.purple { background: rgba(139,92,246,0.1);  }
+.tut-card-name {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #17574A;
+    margin: 0 0 1px;
+}
+.tut-card-tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    color: #aaa;
+}
+.tut-card-desc {
+    font-size: 0.83rem;
+    color: #555;
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+.tut-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.tut-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    font-size: 0.8rem;
+    color: #444;
+    line-height: 1.5;
+}
+.tut-step-num {
+    width: 20px; height: 20px;
+    background: #17574A;
+    color: white;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+.tut-formula-box {
+    background: #0D3529;
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-top: 10px;
+    font-family: 'DM Sans', monospace;
+    font-size: 0.82rem;
+    color: #47d7ac;
+    letter-spacing: 0.3px;
+    line-height: 1.6;
+}
+.tut-tip {
+    background: rgba(71,215,172,0.08);
+    border-left: 3px solid #47d7ac;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 14px;
+    font-size: 0.8rem;
+    color: #2a6b5a;
+    margin-top: 10px;
+    line-height: 1.5;
+}
+.tut-workflow {
+    background: white;
+    border-radius: 14px;
+    padding: 20px 24px;
+    border: 1px solid #E8E5DC;
+    margin-bottom: 20px;
+}
+.tut-workflow-title {
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: #17574A;
+    letter-spacing: 0.3px;
+    margin-bottom: 16px;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 1px;
+}
+.tut-flow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.tut-flow-step {
+    background: #F0EDE3;
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #17574A;
+    white-space: nowrap;
+}
+.tut-flow-arrow {
+    color: #47d7ac;
+    font-size: 1.1rem;
+    font-weight: 700;
+}
+.tut-footer {
+    border-top: 1px solid #E5E2D8;
+    padding-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.tut-footer-note {
+    font-size: 0.78rem;
+    color: #aaa;
+    flex: 1;
+}
+.tut-btn-skip {
+    background: white;
+    border: 1.5px solid #DDD8CC;
+    border-radius: 9px;
+    padding: 9px 20px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+}
+.tut-btn-start {
+    background: #17574A;
+    border: none;
+    border-radius: 9px;
+    padding: 10px 24px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    color: white;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    letter-spacing: 0.2px;
+    transition: all 0.18s;
+}
+.tut-btn-start:hover { background: #0C2E26; }
+</style>
+""", unsafe_allow_html=True)
+
+# Inicializar estado del tutorial
+if "tutorial_seen" not in st.session_state:
+    st.session_state["tutorial_seen"] = False
+if "show_tutorial" not in st.session_state:
+    st.session_state["show_tutorial"] = not st.session_state["tutorial_seen"]
+
+# Botón para reabrir el tutorial desde cualquier página
+with st.sidebar:
+    st.markdown("<div style='padding:0 12px 8px;'>", unsafe_allow_html=True)
+    if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True):
+        st.session_state["show_tutorial"] = True
+        st.rerun()
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Renderizar modal si corresponde
+if st.session_state.get("show_tutorial", False):
+    st.markdown("""
+<div class="tutorial-overlay">
+  <div class="tutorial-modal">
+
+    <!-- CABECERA -->
+    <div class="tut-header">
+      <div class="tut-header-left">
+        <div class="tut-title">Bienvenido a IIAE Biobardas</div>
+        <div class="tut-subtitle">Guía de uso · Sistema de Gestión Ambiental</div>
+      </div>
+      <div class="tut-badge">Tutorial</div>
+    </div>
+
+    <div class="tut-body">
+
+      <!-- INTRO -->
+      <div class="tut-intro">
+        Esta aplicación te permite <strong>cuantificar el impacto ambiental evitado</strong> en las recogidas de
+        plástico de ríos mediante el <em>Índice de Impacto Ambiental Evitado (IIAE)</em>. A continuación encontrarás
+        un resumen de cada sección y cómo usarla.
+      </div>
+
+      <!-- FLUJO DE TRABAJO -->
+      <div class="tut-workflow">
+        <div class="tut-workflow-title">Flujo de trabajo recomendado</div>
+        <div class="tut-flow">
+          <div class="tut-flow-step">📊 Registrar recogida</div>
+          <div class="tut-flow-arrow">→</div>
+          <div class="tut-flow-step">📈 Ver resultados</div>
+          <div class="tut-flow-arrow">→</div>
+          <div class="tut-flow-step">👣 Calcular CO₂</div>
+          <div class="tut-flow-arrow">→</div>
+          <div class="tut-flow-step">📄 Exportar PDF</div>
+        </div>
+      </div>
+
+      <!-- GRID DE SECCIONES -->
+      <div class="tut-grid">
+
+        <!-- ANÁLISIS AMBIENTAL -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon green">📊</div>
+            <div>
+              <div class="tut-card-name">Análisis Ambiental</div>
+              <div class="tut-card-tag">Registro de recogidas</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Introduce los kilos recogidos de cada tipo de plástico y calcula el IIAE al instante.
+            Cada campaña queda registrada automáticamente en el historial.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">1</div>Rellena fecha, hora y ubicación del tramo</div>
+            <div class="tut-step"><div class="tut-step-num">2</div>Introduce los kg de cada plástico recogido</div>
+            <div class="tut-step"><div class="tut-step-num">3</div>Pulsa <strong>Calcular Impacto</strong> para ver resultados</div>
+            <div class="tut-step"><div class="tut-step-num">4</div>Descarga el informe PDF si lo necesitas</div>
+          </div>
+          <div class="tut-formula-box">
+            IIAE = (P_MA·0.30) + (P_MI·0.25)<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (P_RE·0.30) + (P_PA·0.15)
+          </div>
+        </div>
+
+        <!-- PANEL DE RESULTADOS -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon mint">📈</div>
+            <div>
+              <div class="tut-card-name">Panel de Resultados</div>
+              <div class="tut-card-tag">Dashboard histórico</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Visualiza la evolución acumulada de todas las campañas registradas: impacto, fauna protegida,
+            tendencias temporales y análisis por tipo de plástico.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">1</div><strong>Mensual:</strong> barras de impacto mes a mes</div>
+            <div class="tut-step"><div class="tut-step-num">2</div><strong>Acumulado:</strong> curva de impacto total creciente</div>
+            <div class="tut-step"><div class="tut-step-num">3</div><strong>Historial:</strong> tabla completa con hora y ubicación</div>
+            <div class="tut-step"><div class="tut-step-num">4</div><strong>Peligrosidad:</strong> ranking de riesgo por polímero</div>
+          </div>
+          <div class="tut-tip">
+            💡 El botón <strong>Exportar CSV</strong> descarga todo el historial para análisis externo.
+          </div>
+        </div>
+
+        <!-- HUELLA DE CARBONO -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon amber">👣</div>
+            <div>
+              <div class="tut-card-name">Huella de Carbono</div>
+              <div class="tut-card-tag">Equivalencia CO₂</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Calcula el CO₂ equivalente evitado al recuperar plástico en lugar de producirlo de nuevo,
+            comparando tres escenarios de reciclaje.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">1</div>Introduce los kg recogidos de cada plástico</div>
+            <div class="tut-step"><div class="tut-step-num">2</div>Ve la comparativa entre reciclaje ideal, en río y plástico virgen</div>
+            <div class="tut-step"><div class="tut-step-num">3</div>El ahorro neto se expresa también en <strong>km en coche</strong></div>
+          </div>
+          <div class="tut-tip">
+            💡 Los rangos de CO₂ reflejan la variabilidad según el proceso de reciclaje real.
+          </div>
+        </div>
+
+        <!-- MODELO DE CÁLCULO -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon blue">🧮</div>
+            <div>
+              <div class="tut-card-name">Modelo de Cálculo</div>
+              <div class="tut-card-tag">Base científica</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Consulta la metodología completa del IIAE: fórmula oficial, pesos de cada criterio,
+            tabla de polímeros y simulador interactivo.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">1</div><strong>Fórmula IIAE:</strong> criterios y referencias científicas</div>
+            <div class="tut-step"><div class="tut-step-num">2</div><strong>Criterios:</strong> P_MA, P_MI, P_RE, P_PA con sus pesos</div>
+            <div class="tut-step"><div class="tut-step-num">3</div><strong>Polímeros:</strong> ranking completo de 7 materiales</div>
+            <div class="tut-step"><div class="tut-step-num">4</div><strong>Simulador:</strong> desglose visual por material</div>
+          </div>
+        </div>
+
+        <!-- GESTIÓN DE ÍNDICES -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon purple">⚙️</div>
+            <div>
+              <div class="tut-card-name">Gestión de Índices</div>
+              <div class="tut-card-tag">Personalización</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Dentro de <em>Análisis Ambiental</em>, despliega el panel de gestión para añadir nuevos materiales,
+            editar índices existentes o restaurar los valores científicos del TFG.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">1</div>Abre el desplegable <strong>Gestión de Índices y Materiales</strong></div>
+            <div class="tut-step"><div class="tut-step-num">2</div>Edita un material existente escribiendo su nombre exacto</div>
+            <div class="tut-step"><div class="tut-step-num">3</div><strong>Restablecer</strong> vuelve a los valores del PDF del TFG</div>
+          </div>
+          <div class="tut-tip">
+            💡 Los índices originales están basados en el TFG de la Universidad de Montevideo (2026).
+          </div>
+        </div>
+
+        <!-- DATOS Y PRIVACIDAD -->
+        <div class="tut-card">
+          <div class="tut-card-header">
+            <div class="tut-card-icon green">💾</div>
+            <div>
+              <div class="tut-card-name">Datos y almacenamiento</div>
+              <div class="tut-card-tag">Persistencia</div>
+            </div>
+          </div>
+          <div class="tut-card-desc">
+            Toda la información se guarda localmente en el servidor de Streamlit Cloud en dos archivos CSV/JSON.
+          </div>
+          <div class="tut-steps">
+            <div class="tut-step"><div class="tut-step-num">📁</div><code>historial_recolecciones.csv</code> — todas las campañas</div>
+            <div class="tut-step"><div class="tut-step-num">📁</div><code>data_plasticos.json</code> — índices configurados</div>
+          </div>
+          <div class="tut-tip">
+            ⚠️ Streamlit Cloud puede reiniciar el servidor y borrar los datos. Exporta el CSV regularmente.
+          </div>
+        </div>
+
+      </div><!-- /tut-grid -->
+
+      <!-- FOOTER -->
+      <div class="tut-footer">
+        <div class="tut-footer-note">
+          Puedes volver a ver este tutorial en cualquier momento desde el botón <strong>❓ Tutorial de uso</strong> en el sidebar.
+        </div>
+      </div>
+
+    </div><!-- /tut-body -->
+  </div><!-- /tutorial-modal -->
+</div><!-- /tutorial-overlay -->
+    """, unsafe_allow_html=True)
+
+    col_skip, col_start = st.columns([1, 1])
+    with col_skip:
+        if st.button("Cerrar", key="tut_close", use_container_width=True, type="secondary"):
+            st.session_state["show_tutorial"] = False
+            st.session_state["tutorial_seen"] = True
+            st.rerun()
+    with col_start:
+        if st.button("✅ ¡Entendido, empezar!", key="tut_start", use_container_width=True, type="primary"):
+            st.session_state["show_tutorial"] = False
+            st.session_state["tutorial_seen"] = True
+            st.rerun()
 
 
 # ==========================================
