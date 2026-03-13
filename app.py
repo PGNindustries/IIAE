@@ -763,11 +763,11 @@ selec = st.session_state["page"]
 # ==========================================
 # MODAL DE BIENVENIDA — TUTORIAL
 # ==========================================
+import streamlit.components.v1 as components
 
 if "tutorial_seen" not in st.session_state:
     st.session_state["tutorial_seen"] = False
 
-# Botón para reabrir desde el sidebar
 with st.sidebar:
     st.markdown("<div style='padding:0 12px 8px;'>", unsafe_allow_html=True)
     if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True):
@@ -776,121 +776,169 @@ with st.sidebar:
     st.markdown("</div>", unsafe_allow_html=True)
 
 if not st.session_state.get("tutorial_seen", False):
-    st.markdown("""
-<div style="position:fixed;inset:0;background:rgba(8,24,18,0.80);backdrop-filter:blur(5px);z-index:99998;display:flex;align-items:center;justify-content:center;">
-  <div style="background:#F8F6F0;border-radius:20px;width:min(880px,92vw);max-height:88vh;overflow-y:auto;box-shadow:0 28px 80px rgba(0,0,0,0.40);font-family:'DM Sans',sans-serif;">
 
-    <div style="background:#0D3529;border-radius:20px 20px 0 0;padding:26px 36px 22px;display:flex;align-items:center;justify-content:space-between;">
-      <div>
-        <div style="font-family:'Fraunces',serif;font-size:1.6rem;font-weight:400;font-style:italic;color:white;margin:0 0 3px;line-height:1.2;">Bienvenido a IIAE Biobardas</div>
-        <div style="font-size:0.78rem;color:rgba(255,255,255,0.45);letter-spacing:0.4px;">Guía de uso · Sistema de Gestión Ambiental</div>
-      </div>
-      <div style="background:rgba(71,215,172,0.15);border:1px solid rgba(71,215,172,0.3);color:#47d7ac;font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:4px 12px;border-radius:20px;">Tutorial</div>
+    TUTORIAL_HTML = """<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,400&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #F8F6F0; font-family: 'DM Sans', sans-serif; padding: 0; }
+.modal { background: #F8F6F0; border-radius: 16px; overflow: hidden; }
+.head { background: #0D3529; padding: 26px 32px 22px; display: flex; align-items: center; justify-content: space-between; }
+.head-title { font-family: 'Fraunces', serif; font-size: 1.55rem; font-weight: 400; font-style: italic; color: white; margin-bottom: 3px; }
+.head-sub { font-size: 0.77rem; color: rgba(255,255,255,0.45); letter-spacing: 0.3px; }
+.badge { background: rgba(71,215,172,0.15); border: 1px solid rgba(71,215,172,0.3); color: #47d7ac; font-size: 0.67rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 4px 12px; border-radius: 20px; }
+.body { padding: 24px 32px 28px; }
+.intro { font-size: 0.89rem; color: #555; line-height: 1.7; margin-bottom: 20px; padding-bottom: 18px; border-bottom: 1px solid #E5E2D8; }
+.flow-box { background: white; border-radius: 10px; padding: 14px 20px; border: 1px solid #E8E5DC; margin-bottom: 18px; }
+.flow-label { font-size: 0.67rem; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #17574A; margin-bottom: 10px; opacity: 0.7; }
+.flow { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.flow-step { background: #F0EDE3; border-radius: 7px; padding: 6px 13px; font-size: 0.78rem; font-weight: 600; color: #17574A; }
+.flow-arr { color: #47d7ac; font-size: 1rem; font-weight: 700; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
+.card { background: white; border-radius: 11px; padding: 16px; border: 1px solid #E8E5DC; }
+.card-hd { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.ico { width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.card-name { font-weight: 700; font-size: 0.86rem; color: #17574A; }
+.card-tag { font-size: 0.65rem; font-weight: 600; letter-spacing: 0.7px; text-transform: uppercase; color: #bbb; margin-top: 1px; }
+.card-desc { font-size: 0.8rem; color: #555; line-height: 1.6; margin-bottom: 9px; }
+.steps { display: flex; flex-direction: column; gap: 5px; }
+.step { display: flex; align-items: flex-start; gap: 7px; font-size: 0.78rem; color: #444; line-height: 1.5; }
+.num { min-width: 18px; height: 18px; background: #17574A; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+.formula { background: #0D3529; border-radius: 7px; padding: 10px 13px; margin-top: 9px; font-size: 0.78rem; color: #47d7ac; line-height: 1.6; }
+.tip { background: rgba(71,215,172,0.07); border-left: 3px solid #47d7ac; border-radius: 0 6px 6px 0; padding: 8px 11px; font-size: 0.78rem; color: #2a6b5a; margin-top: 8px; line-height: 1.5; }
+.warn { background: rgba(224,123,57,0.07); border-left: 3px solid #e07b39; border-radius: 0 6px 6px 0; padding: 8px 11px; font-size: 0.78rem; color: #7a4a1a; margin-top: 8px; line-height: 1.5; }
+.foot { border-top: 1px solid #E5E2D8; padding-top: 14px; font-size: 0.75rem; color: #aaa; }
+code { background: #F0EDE3; padding: 1px 5px; border-radius: 4px; font-size: 0.75rem; color: #17574A; }
+</style>
+</head>
+<body>
+<div class="modal">
+  <div class="head">
+    <div>
+      <div class="head-title">Bienvenido a IIAE Biobardas</div>
+      <div class="head-sub">Guía de uso · Sistema de Gestión Ambiental</div>
+    </div>
+    <div class="badge">Tutorial</div>
+  </div>
+  <div class="body">
+
+    <div class="intro">
+      Esta aplicación te permite <strong>cuantificar el impacto ambiental evitado</strong> en recogidas de plástico de ríos mediante el <em>Índice de Impacto Ambiental Evitado (IIAE)</em>. Aquí tienes un resumen de cada sección y cómo usarla.
     </div>
 
-    <div style="padding:26px 36px 30px;">
+    <div class="flow-box">
+      <div class="flow-label">Flujo de trabajo recomendado</div>
+      <div class="flow">
+        <div class="flow-step">📊 Registrar recogida</div>
+        <div class="flow-arr">→</div>
+        <div class="flow-step">📈 Ver resultados</div>
+        <div class="flow-arr">→</div>
+        <div class="flow-step">👣 Calcular CO₂</div>
+        <div class="flow-arr">→</div>
+        <div class="flow-step">📄 Exportar PDF</div>
+      </div>
+    </div>
 
-      <div style="font-size:0.9rem;color:#555;line-height:1.7;margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid #E5E2D8;">
-        Esta aplicación te permite <strong>cuantificar el impacto ambiental evitado</strong> en recogidas de plástico de ríos mediante el <em>Índice de Impacto Ambiental Evitado (IIAE)</em>. Aquí tienes un resumen de cada sección y cómo usarla.
+    <div class="grid">
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(23,87,74,0.09)">📊</div>
+          <div><div class="card-name">Análisis Ambiental</div><div class="card-tag">Registro de recogidas</div></div>
+        </div>
+        <div class="card-desc">Introduce los kg recogidos de cada polímero y calcula el IIAE al instante. Cada campaña queda registrada automáticamente.</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><span>Rellena fecha, hora y ubicación del tramo</span></div>
+          <div class="step"><div class="num">2</div><span>Introduce los kg de cada plástico recogido</span></div>
+          <div class="step"><div class="num">3</div><span>Pulsa <strong>Calcular Impacto</strong> para ver resultados</span></div>
+          <div class="step"><div class="num">4</div><span>Descarga el informe PDF si lo necesitas</span></div>
+        </div>
+        <div class="formula">IIAE = (P_MA · 0.30) + (P_MI · 0.25)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (P_RE · 0.30) + (P_PA · 0.15)</div>
       </div>
 
-      <div style="background:white;border-radius:12px;padding:16px 22px;border:1px solid #E8E5DC;margin-bottom:20px;">
-        <div style="font-size:0.68rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:#17574A;margin-bottom:12px;opacity:0.7;">Flujo de trabajo recomendado</div>
-        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-          <div style="background:#F0EDE3;border-radius:7px;padding:7px 14px;font-size:0.79rem;font-weight:600;color:#17574A;">📊 Registrar recogida</div>
-          <div style="color:#47d7ac;font-size:1rem;font-weight:700;">→</div>
-          <div style="background:#F0EDE3;border-radius:7px;padding:7px 14px;font-size:0.79rem;font-weight:600;color:#17574A;">📈 Ver resultados</div>
-          <div style="color:#47d7ac;font-size:1rem;font-weight:700;">→</div>
-          <div style="background:#F0EDE3;border-radius:7px;padding:7px 14px;font-size:0.79rem;font-weight:600;color:#17574A;">👣 Calcular CO₂</div>
-          <div style="color:#47d7ac;font-size:1rem;font-weight:700;">→</div>
-          <div style="background:#F0EDE3;border-radius:7px;padding:7px 14px;font-size:0.79rem;font-weight:600;color:#17574A;">📄 Exportar PDF</div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(71,215,172,0.12)">📈</div>
+          <div><div class="card-name">Panel de Resultados</div><div class="card-tag">Dashboard histórico</div></div>
+        </div>
+        <div class="card-desc">Visualiza la evolución acumulada de todas las campañas: impacto, fauna protegida, tendencias y análisis por polímero.</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><span><strong>Mensual:</strong> impacto IIAE mes a mes</span></div>
+          <div class="step"><div class="num">2</div><span><strong>Acumulado:</strong> curva de impacto total creciente</span></div>
+          <div class="step"><div class="num">3</div><span><strong>Historial:</strong> tabla con hora, ubicación y notas</span></div>
+          <div class="step"><div class="num">4</div><span><strong>Peligrosidad:</strong> ranking de riesgo por polímero</span></div>
+        </div>
+        <div class="tip">💡 El botón <strong>Exportar CSV</strong> descarga todo el historial para análisis externo.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(224,123,57,0.10)">👣</div>
+          <div><div class="card-name">Huella de Carbono</div><div class="card-tag">Equivalencia CO₂</div></div>
+        </div>
+        <div class="card-desc">Calcula el CO₂ equivalente evitado al recuperar plástico, comparando tres escenarios de reciclaje.</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><span>Introduce los kg recogidos de cada plástico</span></div>
+          <div class="step"><div class="num">2</div><span>Compara: reciclaje ideal, en río y plástico virgen</span></div>
+          <div class="step"><div class="num">3</div><span>El ahorro neto se expresa también en <strong>km en coche</strong></span></div>
+        </div>
+        <div class="tip">💡 Los rangos de CO₂ reflejan la variabilidad del proceso de reciclaje real.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(74,144,226,0.10)">🧮</div>
+          <div><div class="card-name">Modelo de Cálculo</div><div class="card-tag">Base científica</div></div>
+        </div>
+        <div class="card-desc">Consulta la metodología completa: fórmula, pesos de criterios, tabla de polímeros y simulador interactivo.</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><span><strong>Fórmula IIAE:</strong> criterios y referencias científicas</span></div>
+          <div class="step"><div class="num">2</div><span><strong>Criterios:</strong> P_MA, P_MI, P_RE, P_PA con sus pesos</span></div>
+          <div class="step"><div class="num">3</div><span><strong>Polímeros:</strong> ranking completo de 7 materiales</span></div>
+          <div class="step"><div class="num">4</div><span><strong>Simulador:</strong> desglose visual por material</span></div>
         </div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:22px;">
-        
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(23,87,74,0.09);">📊</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Análisis Ambiental</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Registro de recogidas</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">Introduce los kg recogidos de cada polímero y calcula el IIAE al instante. Cada campaña queda registrada automáticamente.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span>Rellena fecha, hora y ubicación del tramo</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span>Introduce los kg de cada plástico recogido</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">3</div><span>Pulsa <strong>Calcular Impacto</strong> para ver resultados</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">4</div><span>Descarga el informe PDF si lo necesitas</span></div>
-  <div style="background:#0D3529;border-radius:8px;padding:11px 14px;margin-top:10px;font-size:0.79rem;color:#47d7ac;line-height:1.6;">IIAE = (P_MA · 0.30) + (P_MI · 0.25)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;+ (P_RE · 0.30) + (P_PA · 0.15)</div>
-</div>
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(71,215,172,0.12);">📈</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Panel de Resultados</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Dashboard histórico</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">Visualiza la evolución acumulada de todas las campañas: impacto, fauna protegida, tendencias y análisis por polímero.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span><strong>Mensual:</strong> impacto IIAE mes a mes</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span><strong>Acumulado:</strong> curva de impacto total creciente</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">3</div><span><strong>Historial:</strong> tabla con hora, ubicación y notas</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">4</div><span><strong>Peligrosidad:</strong> ranking de riesgo por polímero</span></div>
-  <div style="background:rgba(71,215,172,0.07);border-left:3px solid #47d7ac;border-radius:0 7px 7px 0;padding:9px 12px;font-size:0.79rem;color:#2a6b5a;margin-top:9px;line-height:1.5;">💡 El botón <strong>Exportar CSV</strong> descarga todo el historial para análisis externo.</div>
-</div>
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(224,123,57,0.10);">👣</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Huella de Carbono</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Equivalencia CO₂</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">Calcula el CO₂ equivalente evitado al recuperar plástico, comparando tres escenarios de reciclaje.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span>Introduce los kg recogidos de cada plástico</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span>Compara: reciclaje ideal, en río y plástico virgen</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">3</div><span>El ahorro neto se expresa también en <strong>km en coche</strong></span></div>
-  <div style="background:rgba(71,215,172,0.07);border-left:3px solid #47d7ac;border-radius:0 7px 7px 0;padding:9px 12px;font-size:0.79rem;color:#2a6b5a;margin-top:9px;line-height:1.5;">💡 Los rangos de CO₂ reflejan la variabilidad del proceso de reciclaje real.</div>
-</div>
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(74,144,226,0.10);">🧮</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Modelo de Cálculo</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Base científica</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">Consulta la metodología completa: fórmula, pesos de criterios, tabla de polímeros y simulador interactivo.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span><strong>Fórmula IIAE:</strong> criterios y referencias científicas</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span><strong>Criterios:</strong> P_MA, P_MI, P_RE, P_PA con sus pesos</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">3</div><span><strong>Polímeros:</strong> ranking completo de 7 materiales</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">4</div><span><strong>Simulador:</strong> desglose visual por material</span></div>
-  
-</div>
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(139,92,246,0.10);">⚙️</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Gestión de Índices</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Personalización</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">En Análisis Ambiental despliega el panel de gestión para añadir materiales, editar índices o restaurar los valores del TFG.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span>Abre <strong>Gestión de Índices y Materiales</strong></span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span>Edita un material escribiendo su nombre exacto</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">3</div><span><strong>Restablecer</strong> vuelve a los valores del PDF del TFG</span></div>
-  <div style="background:rgba(71,215,172,0.07);border-left:3px solid #47d7ac;border-radius:0 7px 7px 0;padding:9px 12px;font-size:0.79rem;color:#2a6b5a;margin-top:9px;line-height:1.5;">💡 Los índices originales están basados en el TFG de la Universidad de Montevideo (2026).</div>
-</div>
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
-  <div style="display:flex;align-items:center;gap:11px;margin-bottom:12px;">
-    <div style="width:38px;height:38px;border-radius:9px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.05rem;background:rgba(23,87,74,0.09);">💾</div>
-    <div>
-      <div style="font-weight:700;font-size:0.88rem;color:#17574A;margin:0 0 1px;">Datos y almacenamiento</div>
-      <div style="font-size:0.67rem;font-weight:600;letter-spacing:0.7px;text-transform:uppercase;color:#bbb;">Persistencia</div>
-    </div>
-  </div>
-  <div style="font-size:0.81rem;color:#555;line-height:1.6;margin-bottom:10px;">Los datos se guardan en el servidor de Streamlit Cloud en dos archivos locales.</div>
-  <div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">1</div><span><code>historial_recolecciones.csv</code> — campañas registradas</span></div><div style="display:flex;align-items:flex-start;gap:8px;font-size:0.8rem;color:#444;line-height:1.5;margin-bottom:5px;"><div style="min-width:19px;height:19px;background:#17574A;color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:700;flex-shrink:0;margin-top:1px;">2</div><span><code>data_plasticos.json</code> — índices de polímeros</span></div>
-  <div style="background:rgba(255,180,0,0.07);border-left:3px solid #e07b39;border-radius:0 7px 7px 0;padding:9px 12px;font-size:0.79rem;color:#7a4a1a;margin-top:9px;line-height:1.5;">⚠️ Streamlit puede reiniciar el servidor. Exporta el CSV regularmente.</div>
-</div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(139,92,246,0.10)">⚙️</div>
+          <div><div class="card-name">Gestión de Índices</div><div class="card-tag">Personalización</div></div>
+        </div>
+        <div class="card-desc">En Análisis Ambiental, despliega el panel de gestión para añadir materiales, editar índices o restaurar los del TFG.</div>
+        <div class="steps">
+          <div class="step"><div class="num">1</div><span>Abre <strong>Gestión de Índices y Materiales</strong></span></div>
+          <div class="step"><div class="num">2</div><span>Edita un material escribiendo su nombre exacto</span></div>
+          <div class="step"><div class="num">3</div><span><strong>Restablecer</strong> vuelve a los valores del PDF del TFG</span></div>
+        </div>
+        <div class="tip">💡 Índices basados en el TFG de la Universidad de Montevideo (2026).</div>
       </div>
 
-      <div style="border-top:1px solid #E5E2D8;padding-top:16px;">
-        <div style="font-size:0.76rem;color:#aaa;">Puedes volver a ver este tutorial desde el botón <strong>❓ Tutorial de uso</strong> en el sidebar izquierdo.</div>
+      <div class="card">
+        <div class="card-hd">
+          <div class="ico" style="background:rgba(23,87,74,0.09)">💾</div>
+          <div><div class="card-name">Datos y almacenamiento</div><div class="card-tag">Persistencia</div></div>
+        </div>
+        <div class="card-desc">Los datos se guardan en el servidor de Streamlit Cloud en dos archivos locales.</div>
+        <div class="steps">
+          <div class="step"><div class="num">📁</div><span><code>historial_recolecciones.csv</code> — campañas</span></div>
+          <div class="step"><div class="num">📁</div><span><code>data_plasticos.json</code> — índices</span></div>
+        </div>
+        <div class="warn">⚠️ Streamlit puede reiniciar el servidor. Exporta el CSV regularmente.</div>
       </div>
 
     </div>
+
+    <div class="foot">Puedes volver a ver este tutorial desde el botón <strong>❓ Tutorial de uso</strong> en el sidebar.</div>
   </div>
 </div>
-""", unsafe_allow_html=True)
+</body>
+</html>"""
+
+    components.html(TUTORIAL_HTML, height=900, scrolling=True)
+
     col_skip, col_start = st.columns([1, 1])
     with col_skip:
         if st.button("✖ Cerrar", key="tut_close", use_container_width=True, type="secondary"):
