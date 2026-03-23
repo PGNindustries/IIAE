@@ -722,7 +722,7 @@ PAGINAS = {
     "🏠 Inicio":              "Inicio",
     "📊 Análisis Ambiental":  "Análisis Ambiental",
     "📈 Panel de Resultados": "Panel de Resultados",
-    "👣 Huella de Carbono":   "Huella de Carbono",
+    "⚡ Valorización Energética": "Valorización Energética",
     "🧮 Modelo de Cálculo":   "Modelo de Cálculo",
 }
 
@@ -886,15 +886,15 @@ code { background: #F0EDE3; padding: 1px 5px; border-radius: 4px; font-size: 0.7
       <div class="card">
         <div class="card-hd">
           <div class="ico" style="background:rgba(224,123,57,0.10)">👣</div>
-          <div><div class="card-name">Huella de Carbono</div><div class="card-tag">Equivalencia CO₂</div></div>
+          <div><div class="card-name">Valorización Energética</div><div class="card-tag">Waste-to-Energy</div></div>
         </div>
-        <div class="card-desc">Calcula el CO₂ equivalente evitado al recuperar plástico, comparando tres escenarios de reciclaje.</div>
+        <div class="card-desc">Calcula la energía eléctrica recuperable mediante valorización térmica directa (Waste-to-Energy) del plástico interceptado.</div>
         <div class="steps">
-          <div class="step"><div class="num">1</div><span>Introduce los kg recogidos de cada plástico</span></div>
-          <div class="step"><div class="num">2</div><span>Compara: reciclaje ideal, en río y plástico virgen</span></div>
-          <div class="step"><div class="num">3</div><span>El ahorro neto se expresa también en <strong>km en coche</strong></span></div>
+          <div class="step"><div class="num">1</div><span>Los datos se toman automáticamente de la última campaña calculada</span></div>
+          <div class="step"><div class="num">2</div><span>Consulta la energía generada por polímero y el total</span></div>
+          <div class="step"><div class="num">3</div><span>Compara la energía con equivalencias reales (hogares, km...)</span></div>
         </div>
-        <div class="tip">💡 Los rangos de CO₂ reflejan la variabilidad del proceso de reciclaje real.</div>
+        <div class="tip">💡 Basado en los PCI de la base de datos Phyllis2/TNO y en la metodología del TFG (§2.8).</div>
       </div>
 
       <div class="card">
@@ -1525,68 +1525,225 @@ elif selec == "Panel de Resultados":
                 st.caption("Registra al menos 3 campañas para activar alertas avanzadas.")
 
 
-# ---- HUELLA DE CARBONO ----
-elif selec == "Huella de Carbono":
-    st.title("👣 Huella de Carbono Evitada")
-    st.markdown("Comparativa de emisiones CO₂ equivalente al reciclar vs. producir plástico virgen.")
+# ---- VALORIZACIÓN ENERGÉTICA ----
+elif selec == "Valorización Energética":
+    plastics = load_plastics()
+    st.markdown(f'''<h1 style="font-family:Fraunces,serif;font-size:2.2rem;font-weight:400;font-style:italic;color:{COLOR_PRIMARY};letter-spacing:-0.5px;margin-bottom:0.1rem;">Valorización Energética</h1>''', unsafe_allow_html=True)
+    st.markdown(
+        "Estimación del potencial de generación eléctrica a partir del plástico interceptado mediante **valorización térmica directa** *(Waste-to-Energy)*. "
+        "Metodología §2.8 del TFG — fórmula termodinámica con PCI de la base de datos **Phyllis2/TNO**."
+    )
+    st.markdown("---")
 
-    col_in, _ = st.columns([1, 2])
-    with col_in:
-        kg_in = st.number_input("Kg de plástico gestionado:", value=100.0, min_value=0.1, step=10.0, format="%.1f")
-
-    FACTORES = {
-        "Reciclaje Ideal":  (0.85, 1.75),
-        "Reciclaje en Río": (1.30, 2.35),
-        "Plástico Virgen":  (1.85, 3.35),
+    # ── Datos PCI según PDF del TFG (Phyllis2/TNO) ──
+    PCI = {
+        "HDPE": 43.56,   # MJ/kg
+        "LDPE": 43.50,
+        "PP":   43.41,
+        "EPS":  40.72,
+        "PS":   40.72,
+        "PET":  21.85,
+        "PVC":  21.65,
     }
+    ETA_PLANTA = 0.25   # Rendimiento eléctrico global de planta ciclo combinado (§2.8.3)
+    MJ_TO_KWH  = 1 / 3.6
 
-    rows = [
-        {
-            "Escenario": name,
-            "CO₂ Mínimo (kg)": kg_in * mn,
-            "CO₂ Máximo (kg)": kg_in * mx,
-            "CO₂ Medio (kg)":  kg_in * (mn + mx) / 2
-        }
-        for name, (mn, mx) in FACTORES.items()
+    # ── Contexto científico: por qué WtE y no reciclaje/pirólisis ──
+    with st.expander("📖 Justificación técnica (§2.8 del TFG)", expanded=False):
+        col_j1, col_j2, col_j3 = st.columns(3)
+        with col_j1:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:8px;">❌ Reciclaje mecánico</div>
+  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
+    Descartado por <strong>inviabilidad técnica</strong>. Los polímeros fluviales han sufrido fotooxidación severa que degrada sus propiedades mecánicas. El biofouling, la humedad y la mezcla heterogénea generan un balance de emisiones netas negativo (Schyns &amp; Shaver, 2021).
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j2:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:8px;">❌ Pirólisis / Gasificación</div>
+  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
+    Ineficiente para residuos fluviales. El alto contenido de humedad consume energía en evaporación. La presencia de PVC genera <strong>ácido clorhídrico (HCl)</strong> que daña las turbinas (Al-Salem et al., 2009).
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j3:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{COLOR_PRIMARY};margin-bottom:8px;">✅ Waste-to-Energy</div>
+  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
+    Solución óptima. Las poliolefinas (HDPE, LDPE, PP) tienen un <strong>PCI de 40–44 MJ/kg</strong>, comparable al gasoil. Planta de ciclo combinado con sistema de filtrado de gases. η = 0.25 (Arena et al., 2015).
+  </div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # ── Fórmula del TFG ──
+    st.markdown("### Fórmula de cálculo (§2.8.3)")
+    st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
+    st.markdown(f"""
+<div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
+            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 24px 0;font-size:0.88rem;color:#444;line-height:2;'>
+  <b>Donde:</b><br>
+  <b>E<sub>Elect</sub></b> — Energía eléctrica neta generada (MJ)<br>
+  <b>M<sub>i</sub></b> — Masa recolectada del polímero <i>i</i> (kg)<br>
+  <b>PCI<sub>i</sub></b> — Poder Calorífico Inferior del polímero <i>i</i> (MJ/kg) · Fuente: <em>Phyllis2/TNO</em><br>
+  <b>η<sub>Planta</sub></b> — Rendimiento eléctrico global de la planta = <b>0.25</b> (Arena et al., 2015)
+</div>
+    """, unsafe_allow_html=True)
+
+    # ── Tabla PCI de referencia ──
+    st.markdown("### Poderes Caloríficos Inferiores (Phyllis2/TNO)")
+    pci_data = [
+        {"Polímero": "HDPE", "PCI (MJ/kg)": 43.56, "Equivalencia": "Combustible alto rendimiento (similar al gasoil)"},
+        {"Polímero": "LDPE", "PCI (MJ/kg)": 43.50, "Equivalencia": "Combustible alto rendimiento"},
+        {"Polímero": "PP",   "PCI (MJ/kg)": 43.41, "Equivalencia": "Combustible alto rendimiento"},
+        {"Polímero": "PS",   "PCI (MJ/kg)": 40.72, "Equivalencia": "Alto rendimiento, combustión rápida"},
+        {"Polímero": "EPS",  "PCI (MJ/kg)": 40.72, "Equivalencia": "Igual PCI másico que PS (misma matriz estirénica)"},
+        {"Polímero": "PET",  "PCI (MJ/kg)": 21.85, "Equivalencia": "Rendimiento medio (oxígeno en estructura)"},
+        {"Polímero": "PVC",  "PCI (MJ/kg)": 21.65, "Equivalencia": "Rendimiento bajo (cloro ignífugo)"},
     ]
-    df_c = pd.DataFrame(rows)
+    df_pci = pd.DataFrame(pci_data)
+    st.dataframe(df_pci, use_container_width=True, hide_index=True)
 
-    # Gráfico de rango con error bars
-    fig = go.Figure()
-    colors = [COLOR_ACCENT, COLOR_PRIMARY, COLOR_WARN]
-    for i, row in df_c.iterrows():
-        mid = row["CO₂ Medio (kg)"]
-        err = row["CO₂ Máximo (kg)"] - mid
-        fig.add_trace(go.Bar(
-            name       = row["Escenario"],
-            x          = [row["Escenario"]],
-            y          = [mid],
-            error_y    = dict(type='data', array=[err], visible=True),
-            marker_color = colors[i],
-            text       = f"{mid:.1f} kg",
-            textposition='auto',
-        ))
-    fig.update_layout(
-        title      = f"Emisiones estimadas para {kg_in:.1f} kg de plástico (kg CO₂e)",
-        showlegend = False,
-        barmode    = 'group'
-    )
-    st.plotly_chart(fig, use_container_width=True)
+    st.markdown("---")
 
-    # Tabla resumen
-    st.dataframe(
-        df_c.set_index("Escenario").style.format("{:.1f}"),
-        use_container_width=True
-    )
+    # ── Entrada de datos ──
+    st.markdown("### Calcular energía recuperable")
+    st.info("Introduce los kg de cada polímero de la campaña para calcular el potencial energético.")
 
-    # Ahorro neto (usando valores medios)
-    ahorro = df_c.loc[2, "CO₂ Medio (kg)"] - df_c.loc[1, "CO₂ Medio (kg)"]
-    if ahorro > 0:
-        st.success(f"✅ **Ahorro neto estimado:** ~{ahorro:.1f} kg CO₂e respecto a producir plástico virgen.")
-        st.markdown(f"> Equivale a **{ahorro/0.21:.0f} km** en coche de combustión (aprox. 0.21 kg CO₂/km).")
-    else:
-        st.warning("⚠️ El balance CO₂ depende de la eficiencia del proceso de reciclaje.")
+    # Prellenar con la última campaña si existe
+    hist = load_historial()
+    kg_defaults = {}
+    if not hist.empty:
+        last = hist.sort_values("Fecha").iloc[-1]
+        tipos = [t.strip() for t in str(last["Tipos"]).split(",")]
+        cantidades = parse_list_string(last["Cantidades (kg)"])
+        if len(tipos) == len(cantidades):
+            kg_defaults = dict(zip(tipos, cantidades))
 
+    p_keys = list(PCI.keys())
+    cols_inp = st.columns(4)
+    kg_vals = {}
+    for i, pol in enumerate(p_keys):
+        default_val = float(kg_defaults.get(pol, 0.0))
+        kg_vals[pol] = cols_inp[i % 4].number_input(
+            f"{pol}", min_value=0.0, max_value=100000.0,
+            value=default_val, step=0.5, format="%.2f",
+            key=f"wte_{pol}"
+        )
+
+    if not hist.empty:
+        st.caption(f"💡 Valores prellenados con la última campaña registrada ({hist.sort_values('Fecha').iloc[-1]['Fecha'].strftime('%d/%m/%Y %H:%M')}).")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True):
+
+        activos = {p: kg for p, kg in kg_vals.items() if kg > 0}
+        if not activos:
+            st.warning("⚠️ Introduce al menos un valor de kg mayor a 0.")
+        else:
+            # Cálculo por polímero
+            resultados = []
+            for pol, kg in activos.items():
+                pci_val  = PCI.get(pol, 0)
+                e_mj     = kg * pci_val * ETA_PLANTA
+                e_kwh    = e_mj * MJ_TO_KWH
+                resultados.append({
+                    "Polímero":      pol,
+                    "Masa (kg)":     kg,
+                    "PCI (MJ/kg)":   pci_val,
+                    "E bruta (MJ)":  kg * pci_val,
+                    "E neta (MJ)":   e_mj,
+                    "E neta (kWh)":  e_kwh,
+                })
+            df_res = pd.DataFrame(resultados)
+
+            total_kg   = df_res["Masa (kg)"].sum()
+            total_mj   = df_res["E neta (MJ)"].sum()
+            total_kwh  = df_res["E neta (kWh)"].sum()
+            total_bruta= df_res["E bruta (MJ)"].sum()
+
+            # ── KPIs ──
+            k1, k2, k3, k4 = st.columns(4)
+            k1.markdown(metric_card("Masa total", f"{total_kg:.1f} kg",   "⚖️"),         unsafe_allow_html=True)
+            k2.markdown(metric_card("Energía bruta", f"{total_bruta:.0f} MJ", "🔥"),    unsafe_allow_html=True)
+            k3.markdown(metric_card("Energía neta", f"{total_mj:.1f} MJ",   "⚡", "accent"), unsafe_allow_html=True)
+            k4.markdown(metric_card("Potencia eléctrica", f"{total_kwh:.1f} kWh", "💡", "warn"), unsafe_allow_html=True)
+
+            st.markdown("<br>", unsafe_allow_html=True)
+
+            # ── Gráfico de barras por polímero ──
+            col_g1, col_g2 = st.columns([1.4, 1])
+            with col_g1:
+                fig_bar = px.bar(
+                    df_res, x="Polímero", y="E neta (kWh)",
+                    color="E neta (kWh)",
+                    color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+                    title="Energía eléctrica neta por polímero (kWh)",
+                    text=df_res["E neta (kWh)"].apply(lambda x: f"{x:.1f}"),
+                )
+                fig_bar.update_traces(textposition="outside")
+                fig_bar.update_layout(coloraxis_showscale=False, showlegend=False)
+                st.plotly_chart(fig_bar, use_container_width=True)
+
+            with col_g2:
+                # Gráfico donut de distribución de energía
+                fig_pie = px.pie(
+                    df_res, names="Polímero", values="E neta (kWh)",
+                    title="Distribución de energía",
+                    color_discrete_sequence=px.colors.sequential.Teal,
+                    hole=0.45
+                )
+                fig_pie.update_traces(textposition="inside", textinfo="percent+label")
+                st.plotly_chart(fig_pie, use_container_width=True)
+
+            # ── Tabla detallada ──
+            st.markdown("### Desglose por polímero")
+            st.dataframe(
+                df_res.style.format({
+                    "Masa (kg)": "{:.2f}", "PCI (MJ/kg)": "{:.2f}",
+                    "E bruta (MJ)": "{:.2f}", "E neta (MJ)": "{:.2f}",
+                    "E neta (kWh)": "{:.2f}",
+                }),
+                use_container_width=True, hide_index=True
+            )
+
+            # ── Equivalencias energéticas ──
+            st.markdown("### Equivalencias energéticas")
+            CONSUMO_HOGAR_KWH  = 3500   # kWh/año hogar medio español (REE)
+            CONSUMO_LED_H      = 0.01   # kWh por hora de bombilla LED 10W
+            COCHE_ELEC_KM      = 0.2    # kWh/km vehículo eléctrico medio
+
+            hogares_dias  = (total_kwh / CONSUMO_HOGAR_KWH) * 365
+            horas_led     = total_kwh / CONSUMO_LED_H
+            km_electrico  = total_kwh / COCHE_ELEC_KM
+
+            e1, e2, e3 = st.columns(3)
+            e1.markdown(metric_card(
+                "Días de hogar abastecido",
+                f"{hogares_dias:.1f} días",
+                "🏠"
+            ), unsafe_allow_html=True)
+            e2.markdown(metric_card(
+                "Horas de bombilla LED",
+                f"{horas_led:,.0f} h",
+                "💡", "accent"
+            ), unsafe_allow_html=True)
+            e3.markdown(metric_card(
+                "Km en vehículo eléctrico",
+                f"{km_electrico:,.0f} km",
+                "🚗", "warn"
+            ), unsafe_allow_html=True)
+
+            st.markdown(f"""
+<div style='background:rgba(23,87,74,0.07);border-radius:12px;padding:14px 20px;
+            border-left:4px solid {COLOR_ACCENT};margin-top:16px;font-size:0.88rem;color:#2a6b5a;line-height:1.7;'>
+  <b>⚡ Resumen:</b> La campaña generaría <b>{total_kwh:.1f} kWh</b> de energía eléctrica neta,
+  suficiente para abastecer un hogar español durante <b>{hogares_dias:.1f} días</b>.
+  Rendimiento de planta η = {ETA_PLANTA} · Fuente PCI: Phyllis2/TNO · Arena et al. (2015).
+</div>
+            """, unsafe_allow_html=True)
 
 
 # ---- MODELO DE CÁLCULO ----
