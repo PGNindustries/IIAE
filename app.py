@@ -1794,84 +1794,6 @@ elif selec == "Valorización Energética":
                 use_container_width=True
             )
 
-    with tab5:
-        st.markdown("### Metodología Waste-to-Energy (§2.8)")
-        st.markdown("Justificación técnica de la valorización energética como destino óptimo del plástico degradado interceptado por biobardas.")
-
-        col_j1, col_j2, col_j3 = st.columns(3)
-        with col_j1:
-            st.markdown(f"""
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Reciclaje mecánico — Descartado</div>
-  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
-    Los polímeros fluviales han sufrido <strong>fotooxidación severa</strong> que degrada sus cadenas, perdiendo propiedades mecánicas (Schyns &amp; Shaver, 2021). El biofouling, humedad y mezcla heterogénea hacen que el balance de emisiones netas sea negativo.
-  </div>
-</div>""", unsafe_allow_html=True)
-        with col_j2:
-            st.markdown(f"""
-<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Pirólisis / Gasificación — Descartado</div>
-  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
-    Ineficiente para residuos fluviales: la humedad consume energía en evaporación. La presencia de PVC genera <strong>ácido clorhídrico (HCl)</strong>, corrosivo para turbinas (Al-Salem et al., 2009).
-  </div>
-</div>""", unsafe_allow_html=True)
-        with col_j3:
-            st.markdown(f"""
-<div style="background:rgba(23,87,74,0.04);border-radius:12px;padding:18px;border:2px solid {COLOR_PRIMARY};height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{COLOR_PRIMARY};margin-bottom:10px;">✅ Waste-to-Energy — Solución óptima</div>
-  <div style="font-size:0.83rem;color:#444;line-height:1.65;">
-    Planta de ciclo combinado con filtrado de gases. Las poliolefinas poseen PCI de <strong>40–44 MJ/kg</strong>, comparable al gasoil. Rendimiento eléctrico η = 0.25 (Arena et al., 2015).
-  </div>
-</div>""", unsafe_allow_html=True)
-
-        st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("### Fórmula termodinámica (§2.8.3)")
-        st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
-        st.markdown(f"""
-<div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
-            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 24px 0;font-size:0.88rem;color:#444;line-height:2.1;'>
-  <b>E<sub>Elect</sub></b> — Energía eléctrica neta generada (MJ)<br>
-  <b>M<sub>i</sub></b> — Masa del polímero <i>i</i> (kg)<br>
-  <b>PCI<sub>i</sub></b> — Poder Calorífico Inferior del polímero <i>i</i> (MJ/kg) · Fuente: <em>Phyllis2/TNO</em><br>
-  <b>η<sub>Planta</sub></b> = <b>0.25</b> — Rendimiento eléctrico global planta ciclo combinado (Arena et al., 2015)
-</div>
-        """, unsafe_allow_html=True)
-
-        st.markdown("### Poderes Caloríficos Inferiores por polímero (Phyllis2/TNO)")
-        df_pci_tab = pd.DataFrame([
-            {"Polímero": "HDPE", "PCI (MJ/kg)": 43.56, "Equivalencia energética": "Combustible alto rendimiento (similar al gasoil)"},
-            {"Polímero": "LDPE", "PCI (MJ/kg)": 43.50, "Equivalencia energética": "Combustible alto rendimiento"},
-            {"Polímero": "PP",   "PCI (MJ/kg)": 43.41, "Equivalencia energética": "Combustible alto rendimiento"},
-            {"Polímero": "PS",   "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Alto rendimiento, combustión rápida"},
-            {"Polímero": "EPS",  "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Igual PCI másico que PS (misma matriz estirénica)"},
-            {"Polímero": "PET",  "PCI (MJ/kg)": 21.85, "Equivalencia energética": "Rendimiento medio (oxígeno en estructura)"},
-            {"Polímero": "PVC",  "PCI (MJ/kg)": 21.65, "Equivalencia energética": "Rendimiento bajo (cloro ignífugo)"},
-        ])
-
-        col_t, col_b = st.columns([1.2, 1])
-        with col_t:
-            st.dataframe(df_pci_tab, use_container_width=True, hide_index=True)
-        with col_b:
-            fig_pci = px.bar(
-                df_pci_tab, x="Polímero", y="PCI (MJ/kg)",
-                color="PCI (MJ/kg)",
-                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
-                title="PCI por polímero (MJ/kg)",
-                text="PCI (MJ/kg)"
-            )
-            fig_pci.update_traces(texttemplate="%{text:.2f}", textposition="outside")
-            fig_pci.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig_pci, use_container_width=True)
-
-        st.markdown("### Referencias")
-        for ref, desc in [
-            ("Arena et al. (2015)", "Base del rendimiento η = 0.25 para plantas WtE de ciclo combinado."),
-            ("Schyns & Shaver (2021)", "Inviabilidad del reciclaje mecánico de plásticos degradados fluviales."),
-            ("Al-Salem et al. (2009)", "Problema del HCl generado por PVC en procesos de pirólisis."),
-            ("Phyllis2/TNO", "Base de datos de referencia para PCI de polímeros termoplásticos."),
-        ]:
-            st.markdown(f"- **{ref}:** {desc}")
-
 
 
 # ---- MODELO DE CÁLCULO ----
@@ -2051,3 +1973,82 @@ elif selec == "Modelo de Cálculo":
             fig_des.update_traces(texttemplate='%{text:.2f}', textposition='outside')
             fig_des.update_layout(showlegend=False)
             st.plotly_chart(fig_des, use_container_width=True)
+
+
+    with tab5:
+        st.markdown("### Metodología Waste-to-Energy (§2.8)")
+        st.markdown("Justificación técnica de la valorización energética como destino óptimo del plástico degradado interceptado por biobardas.")
+
+        col_j1, col_j2, col_j3 = st.columns(3)
+        with col_j1:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Reciclaje mecánico — Descartado</div>
+  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
+    Los polímeros fluviales han sufrido <strong>fotooxidación severa</strong> que degrada sus cadenas, perdiendo propiedades mecánicas (Schyns &amp; Shaver, 2021). El biofouling, humedad y mezcla heterogénea hacen que el balance de emisiones netas sea negativo.
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j2:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Pirólisis / Gasificación — Descartado</div>
+  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
+    Ineficiente para residuos fluviales: la humedad consume energía en evaporación. La presencia de PVC genera <strong>ácido clorhídrico (HCl)</strong>, corrosivo para turbinas (Al-Salem et al., 2009).
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j3:
+            st.markdown(f"""
+<div style="background:rgba(23,87,74,0.04);border-radius:12px;padding:18px;border:2px solid {COLOR_PRIMARY};height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{COLOR_PRIMARY};margin-bottom:10px;">✅ Waste-to-Energy — Solución óptima</div>
+  <div style="font-size:0.83rem;color:#444;line-height:1.65;">
+    Planta de ciclo combinado con filtrado de gases. Las poliolefinas poseen PCI de <strong>40–44 MJ/kg</strong>, comparable al gasoil. Rendimiento eléctrico η = 0.25 (Arena et al., 2015).
+  </div>
+</div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### Fórmula termodinámica (§2.8.3)")
+        st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
+        st.markdown(f"""
+<div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
+            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 24px 0;font-size:0.88rem;color:#444;line-height:2.1;'>
+  <b>E<sub>Elect</sub></b> — Energía eléctrica neta generada (MJ)<br>
+  <b>M<sub>i</sub></b> — Masa del polímero <i>i</i> (kg)<br>
+  <b>PCI<sub>i</sub></b> — Poder Calorífico Inferior del polímero <i>i</i> (MJ/kg) · Fuente: <em>Phyllis2/TNO</em><br>
+  <b>η<sub>Planta</sub></b> = <b>0.25</b> — Rendimiento eléctrico global planta ciclo combinado (Arena et al., 2015)
+</div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("### Poderes Caloríficos Inferiores por polímero (Phyllis2/TNO)")
+        df_pci_tab = pd.DataFrame([
+            {"Polímero": "HDPE", "PCI (MJ/kg)": 43.56, "Equivalencia energética": "Combustible alto rendimiento (similar al gasoil)"},
+            {"Polímero": "LDPE", "PCI (MJ/kg)": 43.50, "Equivalencia energética": "Combustible alto rendimiento"},
+            {"Polímero": "PP",   "PCI (MJ/kg)": 43.41, "Equivalencia energética": "Combustible alto rendimiento"},
+            {"Polímero": "PS",   "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Alto rendimiento, combustión rápida"},
+            {"Polímero": "EPS",  "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Igual PCI másico que PS (misma matriz estirénica)"},
+            {"Polímero": "PET",  "PCI (MJ/kg)": 21.85, "Equivalencia energética": "Rendimiento medio (oxígeno en estructura)"},
+            {"Polímero": "PVC",  "PCI (MJ/kg)": 21.65, "Equivalencia energética": "Rendimiento bajo (cloro ignífugo)"},
+        ])
+
+        col_t, col_b = st.columns([1.2, 1])
+        with col_t:
+            st.dataframe(df_pci_tab, use_container_width=True, hide_index=True)
+        with col_b:
+            fig_pci = px.bar(
+                df_pci_tab, x="Polímero", y="PCI (MJ/kg)",
+                color="PCI (MJ/kg)",
+                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+                title="PCI por polímero (MJ/kg)",
+                text="PCI (MJ/kg)"
+            )
+            fig_pci.update_traces(texttemplate="%{text:.2f}", textposition="outside")
+            fig_pci.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig_pci, use_container_width=True)
+
+        st.markdown("### Referencias")
+        for ref, desc in [
+            ("Arena et al. (2015)", "Base del rendimiento η = 0.25 para plantas WtE de ciclo combinado."),
+            ("Schyns & Shaver (2021)", "Inviabilidad del reciclaje mecánico de plásticos degradados fluviales."),
+            ("Al-Salem et al. (2009)", "Problema del HCl generado por PVC en procesos de pirólisis."),
+            ("Phyllis2/TNO", "Base de datos de referencia para PCI de polímeros termoplásticos."),
+        ]:
+            st.markdown(f"- **{ref}:** {desc}")
