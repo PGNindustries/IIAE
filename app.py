@@ -719,11 +719,11 @@ def crear_pdf(df: pd.DataFrame, total: float, fauna: float, kg_total: float,
 # ==========================================
 
 PAGINAS = {
-    "🏠 Inicio":              "Inicio",
-    "📊 Análisis Ambiental":  "Análisis Ambiental",
-    "📈 Panel de Resultados": "Panel de Resultados",
-    "⚡ Valorización Energética": "Valorización Energética",
-    "🧮 Modelo de Cálculo":   "Modelo de Cálculo",
+    "🏠 Inicio":                  "Inicio",
+    "📊 Análisis Ambiental":      "Análisis Ambiental",
+    "⚡ Valorización Energética":  "Valorización Energética",
+    "📈 Panel de Resultados":      "Panel de Resultados",
+    "🧮 Modelo de Cálculo":       "Modelo de Cálculo",
 }
 
 with st.sidebar:
@@ -1332,11 +1332,35 @@ elif selec == "Panel de Resultados":
     t_fauna = hist["Fauna afectada"].sum()
     t_pers  = calc_total_persistence(hist, plastics)
 
+    # ── Calcular energía WtE acumulada ──
+    PCI_VALS = {"HDPE":43.56,"LDPE":43.50,"PP":43.41,"EPS":40.72,"PS":40.72,"PET":21.85,"PVC":21.65}
+    ETA      = 0.25
+    MJ_KWH   = 1/3.6
+    total_wte_kwh = 0.0
+    for _, row in hist.iterrows():
+        tipos = [t.strip() for t in str(row["Tipos"]).split(",")]
+        kgs   = parse_list_string(row["Cantidades (kg)"])
+        if len(tipos) == len(kgs):
+            for pol, kg in zip(tipos, kgs):
+                total_wte_kwh += kg * PCI_VALS.get(pol.upper(), 0) * ETA * MJ_KWH
+
     m1, m2, m3, m4 = st.columns(4)
     m1.markdown(metric_card("IIAE Acumulado",     f"{t_iiae:,.2f}", "🌿"), unsafe_allow_html=True)
     m2.markdown(metric_card("Fauna (estimada)",   f"{t_fauna:,.0f}", "🐟", "accent"), unsafe_allow_html=True)
     m3.markdown(metric_card("Botellas PET equiv.", f"{int(t_kg/BOTELLA_PET_KG):,}", "♻️", "warn"), unsafe_allow_html=True)
     m4.markdown(metric_card("Años Persistencia",  f"{t_pers:,.0f}", "⏳"), unsafe_allow_html=True)
+
+    # ── Fila extra: métricas WtE ──
+    st.markdown("<br>", unsafe_allow_html=True)
+    w1, w2, w3 = st.columns(3)
+    CONSUMO_HOGAR = 3500
+    w1.markdown(metric_card("Energía WtE total", f"{total_wte_kwh:,.1f} kWh", "⚡", "accent"), unsafe_allow_html=True)
+    w2.markdown(metric_card("Días hogar abastecido", f"{(total_wte_kwh/CONSUMO_HOGAR*365):.1f} días", "🏠"), unsafe_allow_html=True)
+    w3.markdown(metric_card("Km vehículo eléctrico", f"{total_wte_kwh/0.2:,.0f} km", "🚗", "warn"), unsafe_allow_html=True)
+    st.markdown(f"""
+<div style='font-size:0.75rem;color:#aaa;text-align:right;margin-top:-8px;margin-bottom:16px;'>
+  ⚡ Energía WtE — η=0.25 · Phyllis2/TNO · Arena et al. (2015)
+</div>""", unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1548,63 +1572,7 @@ elif selec == "Valorización Energética":
     ETA_PLANTA = 0.25   # Rendimiento eléctrico global de planta ciclo combinado (§2.8.3)
     MJ_TO_KWH  = 1 / 3.6
 
-    # ── Contexto científico: por qué WtE y no reciclaje/pirólisis ──
-    with st.expander("📖 Justificación técnica (§2.8 del TFG)", expanded=False):
-        col_j1, col_j2, col_j3 = st.columns(3)
-        with col_j1:
-            st.markdown(f"""
-<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:8px;">❌ Reciclaje mecánico</div>
-  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
-    Descartado por <strong>inviabilidad técnica</strong>. Los polímeros fluviales han sufrido fotooxidación severa que degrada sus propiedades mecánicas. El biofouling, la humedad y la mezcla heterogénea generan un balance de emisiones netas negativo (Schyns &amp; Shaver, 2021).
-  </div>
-</div>""", unsafe_allow_html=True)
-        with col_j2:
-            st.markdown(f"""
-<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:8px;">❌ Pirólisis / Gasificación</div>
-  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
-    Ineficiente para residuos fluviales. El alto contenido de humedad consume energía en evaporación. La presencia de PVC genera <strong>ácido clorhídrico (HCl)</strong> que daña las turbinas (Al-Salem et al., 2009).
-  </div>
-</div>""", unsafe_allow_html=True)
-        with col_j3:
-            st.markdown(f"""
-<div style="background:white;border-radius:12px;padding:16px;border:1px solid #E8E5DC;height:100%;">
-  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{COLOR_PRIMARY};margin-bottom:8px;">✅ Waste-to-Energy</div>
-  <div style="font-size:0.82rem;color:#555;line-height:1.6;">
-    Solución óptima. Las poliolefinas (HDPE, LDPE, PP) tienen un <strong>PCI de 40–44 MJ/kg</strong>, comparable al gasoil. Planta de ciclo combinado con sistema de filtrado de gases. η = 0.25 (Arena et al., 2015).
-  </div>
-</div>""", unsafe_allow_html=True)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # ── Fórmula del TFG ──
-    st.markdown("### Fórmula de cálculo (§2.8.3)")
-    st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
-    st.markdown(f"""
-<div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
-            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 24px 0;font-size:0.88rem;color:#444;line-height:2;'>
-  <b>Donde:</b><br>
-  <b>E<sub>Elect</sub></b> — Energía eléctrica neta generada (MJ)<br>
-  <b>M<sub>i</sub></b> — Masa recolectada del polímero <i>i</i> (kg)<br>
-  <b>PCI<sub>i</sub></b> — Poder Calorífico Inferior del polímero <i>i</i> (MJ/kg) · Fuente: <em>Phyllis2/TNO</em><br>
-  <b>η<sub>Planta</sub></b> — Rendimiento eléctrico global de la planta = <b>0.25</b> (Arena et al., 2015)
-</div>
-    """, unsafe_allow_html=True)
-
-    # ── Tabla PCI de referencia ──
-    st.markdown("### Poderes Caloríficos Inferiores (Phyllis2/TNO)")
-    pci_data = [
-        {"Polímero": "HDPE", "PCI (MJ/kg)": 43.56, "Equivalencia": "Combustible alto rendimiento (similar al gasoil)"},
-        {"Polímero": "LDPE", "PCI (MJ/kg)": 43.50, "Equivalencia": "Combustible alto rendimiento"},
-        {"Polímero": "PP",   "PCI (MJ/kg)": 43.41, "Equivalencia": "Combustible alto rendimiento"},
-        {"Polímero": "PS",   "PCI (MJ/kg)": 40.72, "Equivalencia": "Alto rendimiento, combustión rápida"},
-        {"Polímero": "EPS",  "PCI (MJ/kg)": 40.72, "Equivalencia": "Igual PCI másico que PS (misma matriz estirénica)"},
-        {"Polímero": "PET",  "PCI (MJ/kg)": 21.85, "Equivalencia": "Rendimiento medio (oxígeno en estructura)"},
-        {"Polímero": "PVC",  "PCI (MJ/kg)": 21.65, "Equivalencia": "Rendimiento bajo (cloro ignífugo)"},
-    ]
-    df_pci = pd.DataFrame(pci_data)
-    st.dataframe(df_pci, use_container_width=True, hide_index=True)
+    st.markdown("Calcula la energía eléctrica recuperable según la metodología §2.8.3 del TFG. La justificación científica y la fórmula completa están en **Modelo de Cálculo → Valorización WtE**.")
 
     st.markdown("---")
 
@@ -1745,6 +1713,166 @@ elif selec == "Valorización Energética":
 </div>
             """, unsafe_allow_html=True)
 
+            # ── Generar PDF del informe WtE ──
+            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("### 📄 Exportar informe")
+
+            def generar_pdf_wte(df_resultado, total_mj, total_kwh, total_kg, hogares_dias, km_electrico):
+                pdf = FPDF()
+                pdf.add_page()
+                # Cabecera
+                pdf.set_fill_color(13, 53, 41)
+                pdf.rect(0, 0, 210, 28, 'F')
+                pdf.set_font("Arial", "B", 17)
+                pdf.set_text_color(255, 255, 255)
+                pdf.set_xy(0, 7)
+                pdf.cell(210, 14, "Informe Valorización Energética — IIAE Biobardas", align="C", ln=1)
+                pdf.set_xy(10, 32)
+                pdf.set_font("Arial", "", 10)
+                pdf.set_text_color(65, 81, 49)
+                pdf.cell(0, 7, f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Metodologia: §2.8.3 TFG UMH Elche & Univ. Montevideo", ln=1)
+                pdf.ln(4)
+                # Resumen ejecutivo
+                pdf.set_font("Arial", "B", 12)
+                pdf.set_text_color(23, 87, 74)
+                pdf.cell(0, 8, "Resumen ejecutivo", ln=1)
+                pdf.set_font("Arial", "", 10)
+                pdf.set_text_color(40, 40, 40)
+                items = [
+                    (f"Masa total gestionada", f"{total_kg:.2f} kg"),
+                    (f"Energia bruta disponible", f"{total_mj/ETA_PLANTA:.2f} MJ"),
+                    (f"Energia electrica neta (eta={ETA_PLANTA})", f"{total_mj:.2f} MJ  /  {total_kwh:.2f} kWh"),
+                    (f"Dias de hogar abastecido (3500 kWh/año, REE)", f"{hogares_dias:.2f} dias"),
+                    (f"Km en vehiculo electrico (0.20 kWh/km)", f"{km_electrico:,.0f} km"),
+                ]
+                for label, val in items:
+                    pdf.set_font("Arial", "B", 10)
+                    pdf.cell(105, 7, label, border=0)
+                    pdf.set_font("Arial", "", 10)
+                    pdf.cell(0, 7, val, ln=1)
+                pdf.ln(5)
+                # Tabla por polímero
+                pdf.set_font("Arial", "B", 12)
+                pdf.set_text_color(23, 87, 74)
+                pdf.cell(0, 8, "Desglose por polimero", ln=1)
+                # Encabezado tabla
+                pdf.set_fill_color(240, 237, 227)
+                pdf.set_text_color(23, 87, 74)
+                pdf.set_font("Arial", "B", 9)
+                for col, w in [("Polimero",28),("Masa (kg)",28),("PCI (MJ/kg)",32),("E bruta (MJ)",36),("E neta (kWh)",36)]:
+                    pdf.cell(w, 7, col, border=1, fill=True)
+                pdf.ln()
+                pdf.set_font("Arial", "", 9)
+                pdf.set_text_color(40, 40, 40)
+                for _, row in df_resultado.iterrows():
+                    pdf.cell(28, 6, str(row["Polimero"]), border=1)
+                    pdf.cell(28, 6, f"{row['Masa (kg)']:.2f}", border=1)
+                    pdf.cell(32, 6, f"{row['PCI (MJ/kg)']:.2f}", border=1)
+                    pdf.cell(36, 6, f"{row['E bruta (MJ)']:.2f}", border=1)
+                    pdf.cell(36, 6, f"{row['E neta (kWh)']:.2f}", border=1)
+                    pdf.ln()
+                pdf.ln(4)
+                # Metodología
+                pdf.set_font("Arial", "B", 10)
+                pdf.set_text_color(23, 87, 74)
+                pdf.cell(0, 7, "Metodologia: E_Elect = SUM(Mi * PCIi) * eta_Planta", ln=1)
+                pdf.set_font("Arial", "", 9)
+                pdf.set_text_color(100, 100, 100)
+                pdf.cell(0, 6, f"eta_Planta = {ETA_PLANTA} (Arena et al., 2015)  |  PCI: Phyllis2/TNO", ln=1)
+                pdf.cell(0, 6, "TFG: Pedro Juan Garcia Navarro  |  UMH Elche & Universidad de Montevideo  |  2026", ln=1)
+                return pdf.output(dest='S').encode('latin-1')
+
+            # Columna de descarga
+            df_export = df_res.rename(columns={"Polímero":"Polimero"})
+            pdf_bytes = generar_pdf_wte(df_export, total_mj, total_kwh, total_kg, hogares_dias, km_electrico)
+            st.download_button(
+                label="📥 Descargar informe PDF",
+                data=pdf_bytes,
+                file_name=f"informe_wte_biobardas_{datetime.date.today()}.pdf",
+                mime="application/pdf",
+                type="primary",
+                use_container_width=True
+            )
+
+    with tab5:
+        st.markdown("### Metodología Waste-to-Energy (§2.8)")
+        st.markdown("Justificación técnica de la valorización energética como destino óptimo del plástico degradado interceptado por biobardas.")
+
+        col_j1, col_j2, col_j3 = st.columns(3)
+        with col_j1:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Reciclaje mecánico — Descartado</div>
+  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
+    Los polímeros fluviales han sufrido <strong>fotooxidación severa</strong> que degrada sus cadenas, perdiendo propiedades mecánicas (Schyns &amp; Shaver, 2021). El biofouling, humedad y mezcla heterogénea hacen que el balance de emisiones netas sea negativo.
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j2:
+            st.markdown(f"""
+<div style="background:white;border-radius:12px;padding:18px;border:1px solid #E8E5DC;height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:#e07b39;margin-bottom:10px;">❌ Pirólisis / Gasificación — Descartado</div>
+  <div style="font-size:0.83rem;color:#555;line-height:1.65;">
+    Ineficiente para residuos fluviales: la humedad consume energía en evaporación. La presencia de PVC genera <strong>ácido clorhídrico (HCl)</strong>, corrosivo para turbinas (Al-Salem et al., 2009).
+  </div>
+</div>""", unsafe_allow_html=True)
+        with col_j3:
+            st.markdown(f"""
+<div style="background:rgba(23,87,74,0.04);border-radius:12px;padding:18px;border:2px solid {COLOR_PRIMARY};height:100%;">
+  <div style="font-size:0.72rem;font-weight:700;letter-spacing:0.8px;text-transform:uppercase;color:{COLOR_PRIMARY};margin-bottom:10px;">✅ Waste-to-Energy — Solución óptima</div>
+  <div style="font-size:0.83rem;color:#444;line-height:1.65;">
+    Planta de ciclo combinado con filtrado de gases. Las poliolefinas poseen PCI de <strong>40–44 MJ/kg</strong>, comparable al gasoil. Rendimiento eléctrico η = 0.25 (Arena et al., 2015).
+  </div>
+</div>""", unsafe_allow_html=True)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown("### Fórmula termodinámica (§2.8.3)")
+        st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
+        st.markdown(f"""
+<div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
+            border-left:4px solid {COLOR_PRIMARY};margin:10px 0 24px 0;font-size:0.88rem;color:#444;line-height:2.1;'>
+  <b>E<sub>Elect</sub></b> — Energía eléctrica neta generada (MJ)<br>
+  <b>M<sub>i</sub></b> — Masa del polímero <i>i</i> (kg)<br>
+  <b>PCI<sub>i</sub></b> — Poder Calorífico Inferior del polímero <i>i</i> (MJ/kg) · Fuente: <em>Phyllis2/TNO</em><br>
+  <b>η<sub>Planta</sub></b> = <b>0.25</b> — Rendimiento eléctrico global planta ciclo combinado (Arena et al., 2015)
+</div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("### Poderes Caloríficos Inferiores por polímero (Phyllis2/TNO)")
+        df_pci_tab = pd.DataFrame([
+            {"Polímero": "HDPE", "PCI (MJ/kg)": 43.56, "Equivalencia energética": "Combustible alto rendimiento (similar al gasoil)"},
+            {"Polímero": "LDPE", "PCI (MJ/kg)": 43.50, "Equivalencia energética": "Combustible alto rendimiento"},
+            {"Polímero": "PP",   "PCI (MJ/kg)": 43.41, "Equivalencia energética": "Combustible alto rendimiento"},
+            {"Polímero": "PS",   "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Alto rendimiento, combustión rápida"},
+            {"Polímero": "EPS",  "PCI (MJ/kg)": 40.72, "Equivalencia energética": "Igual PCI másico que PS (misma matriz estirénica)"},
+            {"Polímero": "PET",  "PCI (MJ/kg)": 21.85, "Equivalencia energética": "Rendimiento medio (oxígeno en estructura)"},
+            {"Polímero": "PVC",  "PCI (MJ/kg)": 21.65, "Equivalencia energética": "Rendimiento bajo (cloro ignífugo)"},
+        ])
+
+        col_t, col_b = st.columns([1.2, 1])
+        with col_t:
+            st.dataframe(df_pci_tab, use_container_width=True, hide_index=True)
+        with col_b:
+            fig_pci = px.bar(
+                df_pci_tab, x="Polímero", y="PCI (MJ/kg)",
+                color="PCI (MJ/kg)",
+                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
+                title="PCI por polímero (MJ/kg)",
+                text="PCI (MJ/kg)"
+            )
+            fig_pci.update_traces(texttemplate="%{text:.2f}", textposition="outside")
+            fig_pci.update_layout(coloraxis_showscale=False)
+            st.plotly_chart(fig_pci, use_container_width=True)
+
+        st.markdown("### Referencias")
+        for ref, desc in [
+            ("Arena et al. (2015)", "Base del rendimiento η = 0.25 para plantas WtE de ciclo combinado."),
+            ("Schyns & Shaver (2021)", "Inviabilidad del reciclaje mecánico de plásticos degradados fluviales."),
+            ("Al-Salem et al. (2009)", "Problema del HCl generado por PVC en procesos de pirólisis."),
+            ("Phyllis2/TNO", "Base de datos de referencia para PCI de polímeros termoplásticos."),
+        ]:
+            st.markdown(f"- **{ref}:** {desc}")
+
+
 
 # ---- MODELO DE CÁLCULO ----
 elif selec == "Modelo de Cálculo":
@@ -1752,7 +1880,7 @@ elif selec == "Modelo de Cálculo":
     st.title("🧮 Modelo Matemático IIAE")
     st.markdown("Metodología científica del *Índice de Impacto Ambiental Evitado*. Biobardas / UMH Elche &amp; Universidad de Montevideo.")
 
-    tab1, tab2, tab3, tab4 = st.tabs(["Fórmula IIAE", "Criterios y Pesos", "Tabla de Polímeros", "Simulador"])
+    tab1, tab2, tab3, tab4, tab5 = st.tabs(["Fórmula IIAE", "Criterios y Pesos", "Tabla de Polímeros", "Simulador", "Valorización WtE"])
 
     with tab1:
         st.markdown("### Fórmula Principal")
