@@ -456,6 +456,37 @@ footer {{ visibility: hidden; }}
     opacity: 0.85 !important;
 }}
 
+/* Sidebar Specific - Contrast Fix for Expanders & Inputs */
+[data-testid="stSidebar"] details {{
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    color: white !important;
+}}
+[data-testid="stSidebar"] details summary {{
+    color: #47d7ac !important;
+}}
+[data-testid="stSidebar"] .stTextInput label,
+[data-testid="stSidebar"] .stNumberInput label,
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] .stPasswordInput label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span {{
+    color: rgba(255,255,255,0.85) !important;
+}}
+[data-testid="stSidebar"] .stTextInput input, 
+[data-testid="stSidebar"] .stNumberInput input,
+[data-testid="stSidebar"] .stPasswordInput input,
+[data-testid="stSidebar"] .stSelectbox > div > div {{
+    background: rgba(0,0,0,0.2) !important;
+    border-color: rgba(255,255,255,0.15) !important;
+    color: white !important;
+}}
+[data-testid="stSidebar"] .stTextInput input:focus, 
+[data-testid="stSidebar"] .stNumberInput input:focus,
+[data-testid="stSidebar"] .stPasswordInput input:focus {{
+    border-color: #47d7ac !important;
+    box-shadow: 0 0 0 2px rgba(71,215,172,0.2) !important;
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -708,13 +739,13 @@ if st.session_state['user_id'] is None:
         with tab_log:
             log_user = st.text_input("Usuario", key="log_user")
             log_pass = st.text_input("Contraseña", type="password", key="log_pass")
-            if st.button("Entrar", type="primary", use_container_width=True):
+            if st.button("Entrar", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
                 user = db.authenticate_user(log_user, log_pass)
                 if user:
                     st.session_state['user_id'] = user.id
                     st.session_state['username'] = user.username
                     st.session_state['is_admin'] = user.is_admin
-                    st.success(f"Bienvenido/a {user.username}")
+                    st.toast(f"Bienvenido/a {user.username}", icon="✅")
                     st.rerun()
                 else:
                     st.error("Credenciales incorrectas.")
@@ -726,7 +757,7 @@ if st.session_state['user_id'] is None:
             admin_code = ""
             if is_master:
                 admin_code = st.text_input("Código de acceso Admin", type="password", key="reg_admin_code")
-            if st.button("Registrarse", type="primary", use_container_width=True):
+            if st.button("Registrarse", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
                 if not reg_user or not reg_pass:
                     st.warning("Completa usuario y contraseña.")
                 elif is_master and admin_code != st.secrets.get("ADMIN_SECRET", "admin123"):
@@ -734,7 +765,8 @@ if st.session_state['user_id'] is None:
                 else:
                     success, msg = db.register_user(reg_user, reg_pass, is_admin=is_master)
                     if success:
-                        st.success(msg + " Ahora inicia sesión.")
+                        st.toast(msg + " Ahora inicia sesión.", icon="🎉")
+                        st.balloons()
                     else:
                         st.error(msg)
     
@@ -751,7 +783,7 @@ with st.sidebar.expander("⚙️ Configuración de Cuenta"):
     st.markdown("**Cambiar Contraseña**")
     old_p = st.text_input("Contraseña actual", type="password")
     new_p = st.text_input("Nueva contraseña", type="password")
-    if st.button("Actualizar contraseña", use_container_width=True):
+    if st.button("Actualizar contraseña", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
         if not old_p or not new_p:
             st.warning("Completa ambos campos.")
         else:
@@ -763,7 +795,7 @@ with st.sidebar.expander("⚙️ Configuración de Cuenta"):
     
     st.markdown("---")
     st.markdown("**Eliminar Perfil**")
-    if st.button("🗑️ Eliminar mi cuenta", type="secondary", use_container_width=True):
+    if st.button("🗑️ Eliminar mi cuenta", type="secondary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
         st.session_state['confirm_delete'] = True
 
 if st.session_state.get('confirm_delete', False):
@@ -847,7 +879,7 @@ if "tutorial_seen" not in st.session_state:
 
 with st.sidebar:
     st.markdown("<div style='padding:0 12px 8px;'>", unsafe_allow_html=True)
-    if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True):
+    if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
         st.session_state["tutorial_seen"] = False
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1102,7 +1134,7 @@ if selec == "Inicio":
 
     with col_img:
         if os.path.exists("dibujo_rio_biobarda.png"):
-            st.image("dibujo_rio_biobarda.png", use_container_width=True)
+            st.image("dibujo_rio_biobarda.png", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
         else:
             # Placeholder visual con identidad Biobardas (sin imagen)
             st.markdown(f"""
@@ -1159,15 +1191,15 @@ elif selec == "Análisis Ambiental":
                 else:
                     st.warning("Introduce un nombre válido.")
 
-            if col_reset.button("🔄 Restablecer", use_container_width=True):
+            if col_reset.button("🔄 Restablecer", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
                 save_plastics(DEF_PLASTICS)
-                st.success("Valores restablecidos.")
+                st.toast("Valores restablecidos.", icon="✅")
                 st.rerun()
 
             # Eliminar material
             st.markdown("**Eliminar material:**")
             to_delete = st.selectbox("Selecciona", [""] + list(plastics.keys()))
-            if st.button("🗑️ Eliminar", use_container_width=True) and to_delete:
+            if st.button("🗑️ Eliminar", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}) and to_delete:
                 if to_delete in plastics:
                     del plastics[to_delete]
                     save_plastics(plastics)
@@ -1275,7 +1307,7 @@ elif selec == "Análisis Ambiental":
                 )
                 fig_bar.update_traces(texttemplate='%{text:.2f}', textposition='outside')
                 fig_bar.update_layout(showlegend=False)
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
                 try_write_image(fig_bar, "bar_impacto.png")
 
             with g2:
@@ -1301,7 +1333,7 @@ elif selec == "Análisis Ambiental":
                         polar=dict(radialaxis=dict(visible=True, range=[0, 5])),
                         title="Perfil de Riesgo Comparativo"
                     )
-                    st.plotly_chart(fig_rad, use_container_width=True)
+                    st.plotly_chart(fig_rad, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
                     try_write_image(fig_rad, "radar_impacto.png")
                 else:
                     # Con 1 plástico: mostrar gráfico de composición
@@ -1319,7 +1351,7 @@ elif selec == "Análisis Ambiental":
                             ]
                         }
                     ))
-                    st.plotly_chart(fig_s, use_container_width=True)
+                    st.plotly_chart(fig_s, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
             with st.expander("📋 Ver Tabla Detallada"):
                 st.dataframe(
@@ -1327,7 +1359,7 @@ elif selec == "Análisis Ambiental":
                         "Kg recogidos": "{:.2f}", "Índice IIAE": "{:.2f}",
                         "Impacto total": "{:.3f}", "Fauna afectada": "{:.3f}",
                         "Impacto·Persistencia": "{:.1f}"
-                    }),
+                    }, hide_index=True),
                     use_container_width=True, hide_index=True
                 )
 
@@ -1361,7 +1393,7 @@ elif selec == "Panel de Resultados":
     col_del, col_export, _ = st.columns([1, 1, 3])
     if col_del.button("⚠️ Borrar Historial", type="secondary"):
         db.clear_historial(st.session_state['user_id'], st.session_state.get('is_admin', False))
-        st.success("Historial borrado.")
+        st.toast("Historial borrado.", icon="🗑️")
         st.rerun()
 
     hist = load_historial()
@@ -1442,11 +1474,11 @@ elif selec == "Panel de Resultados":
             hover_data={"KgTotal": ":.1f", "Campañas": True, "Fauna": ":.1f"}
         )
         fig_line.update_traces(texttemplate='%{text} camp.', textposition='outside', marker_line_width=1.5, marker_line_color=COLOR_PRIMARY, opacity=0.9)
-        st.plotly_chart(fig_line, use_container_width=True)
+        st.plotly_chart(fig_line, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         # Mini tabla resumen mensual
         st.dataframe(
-            df_mes.rename(columns={"Mes": "Mes", "Impacto": "IIAE", "KgTotal": "Kg Total", "Fauna": "Fauna"})
+            df_mes.rename(columns={"Mes": "Mes", "Impacto": "IIAE", "KgTotal": "Kg Total", "Fauna": "Fauna"}, hide_index=True)
             .style.format({"IIAE": "{:.2f}", "Kg Total": "{:.1f}", "Fauna": "{:.1f}"}),
             use_container_width=True, hide_index=True
         )
@@ -1465,7 +1497,7 @@ elif selec == "Panel de Resultados":
             hover_data={"Fecha_str": True, "Hora": True, "Kg Acumulados": ":.1f", "Fecha": False}
         )
         fig_area.update_traces(line=dict(width=3, color=COLOR_PRIMARY), fillcolor='rgba(71,215,172,0.25)')
-        st.plotly_chart(fig_area, use_container_width=True)
+        st.plotly_chart(fig_area, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
     with tab_wte:
         if not wte_hist.empty:
@@ -1482,7 +1514,7 @@ elif selec == "Panel de Resultados":
                 hover_data={"Fecha_str": True, "E_kWh": ":.1f", "Fecha_dt": False}
             )
             fig_wte.update_traces(fill="tozeroy", line=dict(width=3))
-            st.plotly_chart(fig_wte, use_container_width=True)
+            st.plotly_chart(fig_wte, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
             fig_wte_bar = px.bar(
                 wte_hist_s, x="Fecha_dt", y="E_kWh",
@@ -1490,7 +1522,7 @@ elif selec == "Panel de Resultados":
                 color_discrete_sequence=[COLOR_WARN],
                 labels={"Fecha_dt": "Fecha", "E_kWh": "Energía (kWh)"}
             )
-            st.plotly_chart(fig_wte_bar, use_container_width=True)
+            st.plotly_chart(fig_wte_bar, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
         else:
             st.info("⚡ No hay datos valorizados. Ve a 'Valorización Energética' y guarda tus resultados.")
 
@@ -1503,7 +1535,7 @@ elif selec == "Panel de Resultados":
             hist_display[col] = hist_display[col].replace("", "—").fillna("—")
         st.dataframe(
             hist_display[["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "kgs", "Impacto total", "Fauna afectada"]]
-            .rename(columns={"kgs": "Kg Total"})
+            .rename(columns={"kgs": "Kg Total"}, hide_index=True)
             .style.format({"Impacto total": "{:.2f}", "Fauna afectada": "{:.2f}", "Kg Total": "{:.2f}"}),
             use_container_width=True, hide_index=True
         )
@@ -1549,13 +1581,13 @@ elif selec == "Panel de Resultados":
                 color_discrete_sequence=COLOR_SEQ, hole=0.35
             )
             fig_pie.update_traces(textposition='inside', textinfo='percent+label')
-            st.plotly_chart(fig_pie, use_container_width=True)
+            st.plotly_chart(fig_pie, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         with c_tbl:
             st.markdown("**🏆 Ranking de Riesgo (por IIAE):**")
             st.dataframe(
                 df_peligro[["Plástico", "Kg", "Índice", "Impacto Real"]]
-                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"}),
+                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"}, hide_index=True),
                 use_container_width=True, height=280, hide_index=True
             )
             st.caption("💡 Plásticos ligeros pueden tener mayor impacto que materiales más pesados.")
@@ -1570,7 +1602,7 @@ elif selec == "Panel de Resultados":
             color_discrete_map={"Kg": COLOR_GRID, "Impacto Real": COLOR_PRIMARY},
             title="Comparativa: Masa vs Impacto (Barras Horizontales)"
         )
-        st.plotly_chart(fig_comp, use_container_width=True)
+        st.plotly_chart(fig_comp, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         # ── Alertas ──
         st.markdown("### 🔔 Alertas del Sistema")
@@ -1657,7 +1689,7 @@ elif selec == "Valorización Energética":
         st.caption(f"💡 Valores prellenados con la última campaña registrada ({hist.sort_values('Fecha').iloc[-1]['Fecha'].strftime('%d/%m/%Y %H:%M')}).")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True):
+    if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
         st.session_state["wte_calc_trigger"] = True
 
     if st.session_state.get("wte_calc_trigger", False):
@@ -1707,7 +1739,7 @@ elif selec == "Valorización Energética":
                 )
                 fig_bar.update_traces(textposition="outside")
                 fig_bar.update_layout(coloraxis_showscale=False, showlegend=False)
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_bar, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
                 try_write_image(fig_bar, "wte_bar_impacto.png")
 
             with col_g2:
@@ -1719,14 +1751,14 @@ elif selec == "Valorización Energética":
                     hole=0.45
                 )
                 fig_pie.update_traces(textposition="inside", textinfo="percent+label")
-                st.plotly_chart(fig_pie, use_container_width=True)
+                st.plotly_chart(fig_pie, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
                 try_write_image(fig_pie, "wte_pie_impacto.png")
 
             # ── Tabla detallada ──
             st.markdown("### Desglose por polímero")
             st.dataframe(
                 df_res.style.format({
-                    "Masa (kg)": "{:.2f}", "PCI (MJ/kg)": "{:.2f}",
+                    "Masa (kg, hide_index=True)": "{:.2f}", "PCI (MJ/kg)": "{:.2f}",
                     "E bruta (MJ)": "{:.2f}", "E neta (MJ)": "{:.2f}",
                     "E neta (kWh)": "{:.2f}",
                 }),
@@ -1869,7 +1901,7 @@ elif selec == "Valorización Energética":
                     use_container_width=True
                 )
             with col_save:
-                if st.button("💾 Añadir a Panel de Resultados", type="primary", use_container_width=True):
+                if st.button("💾 Añadir a Panel de Resultados", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
                     fecha_iso  = datetime.datetime.now().isoformat(sep=' ')
                     save_wte_historial(fecha_iso, total_mj, total_kwh, total_kg)
                     st.success("✅ Guardado en el historial de Valorización Energética.")
@@ -1950,7 +1982,7 @@ elif selec == "Modelo de Cálculo":
             color_discrete_sequence=COLOR_SEQ, hole=0.4
         )
         fig_pie_pesos.update_traces(textposition='inside', textinfo='percent+label')
-        st.plotly_chart(fig_pie_pesos, use_container_width=True)
+        st.plotly_chart(fig_pie_pesos, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         st.markdown("### Subcriterios de cada componente")
         st.markdown(f"""
@@ -1989,7 +2021,7 @@ elif selec == "Modelo de Cálculo":
         df_oficial = pd.DataFrame(tabla_oficial)
         st.dataframe(
             df_oficial.style.format({"P_MA": "{:.2f}", "P_MI": "{:.2f}",
-                                     "P_RE": "{:.2f}", "P_PA": "{:.2f}", "IIAE": "{:.2f}"}),
+                                     "P_RE": "{:.2f}", "P_PA": "{:.2f}", "IIAE": "{:.2f}"}, hide_index=True),
             use_container_width=True, hide_index=True
         )
 
@@ -2008,7 +2040,7 @@ elif selec == "Modelo de Cálculo":
             title="Perfil de Riesgo por Criterio – Todos los Polímeros",
             height=480
         )
-        st.plotly_chart(fig_rad_all, use_container_width=True)
+        st.plotly_chart(fig_rad_all, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         df_bar_iiae = pd.DataFrame(tabla_oficial).sort_values("IIAE")
         fig_bar_iiae = px.bar(
@@ -2020,7 +2052,7 @@ elif selec == "Modelo de Cálculo":
         )
         fig_bar_iiae.update_traces(texttemplate='%{text:.2f}', textposition='outside')
         fig_bar_iiae.update_layout(coloraxis_showscale=False, xaxis_range=[0, 4.5])
-        st.plotly_chart(fig_bar_iiae, use_container_width=True)
+        st.plotly_chart(fig_bar_iiae, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
     with tab4:
         st.markdown("**Simula el impacto de distintos escenarios de recogida:**")
@@ -2053,7 +2085,7 @@ elif selec == "Modelo de Cálculo":
             )
             fig_des.update_traces(texttemplate='%{text:.2f}', textposition='outside')
             fig_des.update_layout(showlegend=False)
-            st.plotly_chart(fig_des, use_container_width=True)
+            st.plotly_chart(fig_des, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
 
     with tab5:
@@ -2123,7 +2155,7 @@ elif selec == "Modelo de Cálculo":
             )
             fig_pci.update_traces(texttemplate="%{text:.2f}", textposition="outside")
             fig_pci.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig_pci, use_container_width=True)
+            st.plotly_chart(fig_pci, use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
 
         st.markdown("### Referencias")
         for ref, desc in [
