@@ -1718,6 +1718,18 @@ elif selec == "Valorización Energética":
             st.markdown("### 📄 Exportar informe")
 
             def generar_pdf_wte(df_resultado, total_mj, total_kwh, total_kg, hogares_dias, km_electrico):
+                def safe(txt):
+                    """Convierte texto a latin-1 seguro para FPDF."""
+                    return (str(txt)
+                        .replace("\u03b7", "eta").replace("\u00b2", "2")
+                        .replace("\u00b3", "3").replace("\u00b0", "deg")
+                        .replace("\u2013", "-").replace("\u2014", "-")
+                        .replace("\u2019", "'").replace("\u00e9", "e")
+                        .replace("\u00f3", "o").replace("\u00ed", "i")
+                        .replace("\u00e1", "a").replace("\u00fa", "u")
+                        .replace("\u00f1", "n").replace("\u00a7", "S.")
+                        .encode("latin-1", errors="replace").decode("latin-1"))
+
                 pdf = FPDF()
                 pdf.add_page()
                 # Cabecera
@@ -1726,60 +1738,58 @@ elif selec == "Valorización Energética":
                 pdf.set_font("Arial", "B", 17)
                 pdf.set_text_color(255, 255, 255)
                 pdf.set_xy(0, 7)
-                pdf.cell(210, 14, "Informe Valorización Energética — IIAE Biobardas", align="C", ln=1)
+                pdf.cell(210, 14, safe("Informe Valorizacion Energetica - IIAE Biobardas"), align="C", ln=1)
                 pdf.set_xy(10, 32)
                 pdf.set_font("Arial", "", 10)
                 pdf.set_text_color(65, 81, 49)
-                pdf.cell(0, 7, f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Metodologia: §2.8.3 TFG UMH Elche & Univ. Montevideo", ln=1)
+                pdf.cell(0, 7, safe(f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Metodologia: S.2.8.3 TFG UMH Elche & Univ. Montevideo"), ln=1)
                 pdf.ln(4)
                 # Resumen ejecutivo
                 pdf.set_font("Arial", "B", 12)
                 pdf.set_text_color(23, 87, 74)
-                pdf.cell(0, 8, "Resumen ejecutivo", ln=1)
+                pdf.cell(0, 8, safe("Resumen ejecutivo"), ln=1)
                 pdf.set_font("Arial", "", 10)
                 pdf.set_text_color(40, 40, 40)
                 items = [
-                    (f"Masa total gestionada", f"{total_kg:.2f} kg"),
-                    (f"Energia bruta disponible", f"{total_mj/ETA_PLANTA:.2f} MJ"),
-                    (f"Energia electrica neta (eta={ETA_PLANTA})", f"{total_mj:.2f} MJ  /  {total_kwh:.2f} kWh"),
-                    (f"Dias de hogar abastecido (3500 kWh/año, REE)", f"{hogares_dias:.2f} dias"),
-                    (f"Km en vehiculo electrico (0.20 kWh/km)", f"{km_electrico:,.0f} km"),
+                    ("Masa total gestionada",                       f"{total_kg:.2f} kg"),
+                    ("Energia bruta disponible",                    f"{total_mj/ETA_PLANTA:.2f} MJ"),
+                    (f"Energia electrica neta (eta={ETA_PLANTA})",  f"{total_mj:.2f} MJ  /  {total_kwh:.2f} kWh"),
+                    ("Dias de hogar abastecido (3500 kWh/ano REE)", f"{hogares_dias:.2f} dias"),
+                    ("Km en vehiculo electrico (0.20 kWh/km)",      f"{km_electrico:,.0f} km"),
                 ]
                 for label, val in items:
                     pdf.set_font("Arial", "B", 10)
-                    pdf.cell(105, 7, label, border=0)
+                    pdf.cell(115, 7, safe(label), border=0)
                     pdf.set_font("Arial", "", 10)
-                    pdf.cell(0, 7, val, ln=1)
+                    pdf.cell(0, 7, safe(val), ln=1)
                 pdf.ln(5)
-                # Tabla por polímero
+                # Tabla por polimero
                 pdf.set_font("Arial", "B", 12)
                 pdf.set_text_color(23, 87, 74)
                 pdf.cell(0, 8, "Desglose por polimero", ln=1)
-                # Encabezado tabla
                 pdf.set_fill_color(240, 237, 227)
                 pdf.set_text_color(23, 87, 74)
                 pdf.set_font("Arial", "B", 9)
                 for col, w in [("Polimero",28),("Masa (kg)",28),("PCI (MJ/kg)",32),("E bruta (MJ)",36),("E neta (kWh)",36)]:
-                    pdf.cell(w, 7, col, border=1, fill=True)
+                    pdf.cell(w, 7, safe(col), border=1, fill=True)
                 pdf.ln()
                 pdf.set_font("Arial", "", 9)
                 pdf.set_text_color(40, 40, 40)
                 for _, row in df_resultado.iterrows():
-                    pdf.cell(28, 6, str(row["Polimero"]), border=1)
+                    pdf.cell(28, 6, safe(row["Polimero"]), border=1)
                     pdf.cell(28, 6, f"{row['Masa (kg)']:.2f}", border=1)
                     pdf.cell(32, 6, f"{row['PCI (MJ/kg)']:.2f}", border=1)
                     pdf.cell(36, 6, f"{row['E bruta (MJ)']:.2f}", border=1)
                     pdf.cell(36, 6, f"{row['E neta (kWh)']:.2f}", border=1)
                     pdf.ln()
                 pdf.ln(4)
-                # Metodología
                 pdf.set_font("Arial", "B", 10)
                 pdf.set_text_color(23, 87, 74)
-                pdf.cell(0, 7, "Metodologia: E_Elect = SUM(Mi * PCIi) * eta_Planta", ln=1)
+                pdf.cell(0, 7, "Metodologia: E_Elect = SUM(Mi x PCIi) x eta_Planta", ln=1)
                 pdf.set_font("Arial", "", 9)
                 pdf.set_text_color(100, 100, 100)
-                pdf.cell(0, 6, f"eta_Planta = {ETA_PLANTA} (Arena et al., 2015)  |  PCI: Phyllis2/TNO", ln=1)
-                pdf.cell(0, 6, "TFG: Pedro Juan Garcia Navarro  |  UMH Elche & Universidad de Montevideo  |  2026", ln=1)
+                pdf.cell(0, 6, safe(f"eta_Planta = {ETA_PLANTA} (Arena et al., 2015)  |  PCI: Phyllis2/TNO"), ln=1)
+                pdf.cell(0, 6, "TFG: Pedro Juan Garcia Navarro  |  UMH Elche & Univ. de Montevideo  |  2026", ln=1)
                 return pdf.output(dest='S').encode('latin-1')
 
             # Columna de descarga
