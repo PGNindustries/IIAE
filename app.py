@@ -1587,7 +1587,7 @@ elif selec == "Panel de Resultados":
             st.markdown("**🏆 Ranking de Riesgo (por IIAE):**")
             st.dataframe(
                 df_peligro[["Plástico", "Kg", "Índice", "Impacto Real"]]
-                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"}, hide_index=True),
+                .style.format({"Kg": "{:.1f}", "Índice": "{:.2f}", "Impacto Real": "{:.2f}"}),
                 use_container_width=True, height=280, hide_index=True
             )
             st.caption("💡 Plásticos ligeros pueden tener mayor impacto que materiales más pesados.")
@@ -1758,7 +1758,7 @@ elif selec == "Valorización Energética":
             st.markdown("### Desglose por polímero")
             st.dataframe(
                 df_res.style.format({
-                    "Masa (kg, hide_index=True)": "{:.2f}", "PCI (MJ/kg)": "{:.2f}",
+                    "Masa (kg)": "{:.2f}", "PCI (MJ/kg)": "{:.2f}",
                     "E bruta (MJ)": "{:.2f}", "E neta (MJ)": "{:.2f}",
                     "E neta (kWh)": "{:.2f}",
                 }),
