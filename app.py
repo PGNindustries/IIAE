@@ -1535,7 +1535,7 @@ elif selec == "Panel de Resultados":
             hist_display[col] = hist_display[col].replace("", "—").fillna("—")
         st.dataframe(
             hist_display[["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "kgs", "Impacto total", "Fauna afectada"]]
-            .rename(columns={"kgs": "Kg Total"}, hide_index=True)
+            .rename(columns={"kgs": "Kg Total"})
             .style.format({"Impacto total": "{:.2f}", "Fauna afectada": "{:.2f}", "Kg Total": "{:.2f}"}),
             use_container_width=True, hide_index=True
         )
