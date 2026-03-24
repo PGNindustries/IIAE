@@ -1359,7 +1359,7 @@ elif selec == "Análisis Ambiental":
                         "Kg recogidos": "{:.2f}", "Índice IIAE": "{:.2f}",
                         "Impacto total": "{:.3f}", "Fauna afectada": "{:.3f}",
                         "Impacto·Persistencia": "{:.1f}"
-                    }, hide_index=True),
+                    }),
                     use_container_width=True, hide_index=True
                 )
 
@@ -1478,7 +1478,7 @@ elif selec == "Panel de Resultados":
 
         # Mini tabla resumen mensual
         st.dataframe(
-            df_mes.rename(columns={"Mes": "Mes", "Impacto": "IIAE", "KgTotal": "Kg Total", "Fauna": "Fauna"}, hide_index=True)
+            df_mes.rename(columns={"Mes": "Mes", "Impacto": "IIAE", "KgTotal": "Kg Total", "Fauna": "Fauna"})
             .style.format({"IIAE": "{:.2f}", "Kg Total": "{:.1f}", "Fauna": "{:.1f}"}),
             use_container_width=True, hide_index=True
         )
@@ -2021,7 +2021,7 @@ elif selec == "Modelo de Cálculo":
         df_oficial = pd.DataFrame(tabla_oficial)
         st.dataframe(
             df_oficial.style.format({"P_MA": "{:.2f}", "P_MI": "{:.2f}",
-                                     "P_RE": "{:.2f}", "P_PA": "{:.2f}", "IIAE": "{:.2f}"}, hide_index=True),
+                                     "P_RE": "{:.2f}", "P_PA": "{:.2f}", "IIAE": "{:.2f}"}),
             use_container_width=True, hide_index=True
         )
 
