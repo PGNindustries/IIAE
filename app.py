@@ -723,9 +723,14 @@ if st.session_state['user_id'] is None:
             reg_user = st.text_input("Nuevo Usuario", key="reg_user")
             reg_pass = st.text_input("Contraseña Fuerte", type="password", key="reg_pass")
             is_master = st.checkbox("Cuenta de Administrador (Ver todo en DB)")
+            admin_code = ""
+            if is_master:
+                admin_code = st.text_input("Código de acceso Admin", type="password", key="reg_admin_code")
             if st.button("Registrarse", type="primary", use_container_width=True):
                 if not reg_user or not reg_pass:
                     st.warning("Completa usuario y contraseña.")
+                elif is_master and admin_code != st.secrets.get("ADMIN_SECRET", "admin123"):
+                    st.error("Código de Administrador incorrecto.")
                 else:
                     success, msg = db.register_user(reg_user, reg_pass, is_admin=is_master)
                     if success:
@@ -741,6 +746,39 @@ if st.sidebar.button("Cerrar Sesión"):
     st.session_state['username'] = None
     st.session_state['is_admin'] = False
     st.rerun()
+
+with st.sidebar.expander("⚙️ Configuración de Cuenta"):
+    st.markdown("**Cambiar Contraseña**")
+    old_p = st.text_input("Contraseña actual", type="password")
+    new_p = st.text_input("Nueva contraseña", type="password")
+    if st.button("Actualizar contraseña", use_container_width=True):
+        if not old_p or not new_p:
+            st.warning("Completa ambos campos.")
+        else:
+            success, msg = db.change_password(st.session_state['user_id'], old_p, new_p)
+            if success:
+                st.success(msg)
+            else:
+                st.error(msg)
+    
+    st.markdown("---")
+    st.markdown("**Eliminar Perfil**")
+    if st.button("🗑️ Eliminar mi cuenta", type="secondary", use_container_width=True):
+        st.session_state['confirm_delete'] = True
+
+if st.session_state.get('confirm_delete', False):
+    st.sidebar.warning("¿Seguro que quieres borrar tu perfil y todos tus registros para siempre?")
+    col_d1, col_d2 = st.sidebar.columns(2)
+    if col_d1.button("Sí, borrar", type="primary"):
+        db.delete_user(st.session_state['user_id'])
+        st.session_state['user_id'] = None
+        st.session_state['username'] = None
+        st.session_state['is_admin'] = False
+        st.session_state['confirm_delete'] = False
+        st.rerun()
+    if col_d2.button("Cancelar"):
+        st.session_state['confirm_delete'] = False
+        st.rerun()
 
 st.sidebar.markdown("---")
 

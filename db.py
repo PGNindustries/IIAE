@@ -176,3 +176,25 @@ def clear_historial(user_id: int, is_admin: bool = False):
         db.commit()
     finally:
         db.close()
+
+def delete_user(user_id: int):
+    db = SessionLocal()
+    try:
+        db.query(Recoleccion).filter(Recoleccion.user_id == user_id).delete()
+        db.query(Wte).filter(Wte.user_id == user_id).delete()
+        db.query(User).filter(User.id == user_id).delete()
+        db.commit()
+    finally:
+        db.close()
+
+def change_password(user_id: int, old_password: str, new_password: str):
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if user and verify_password(user.password_hash, old_password):
+            user.password_hash = hash_password(new_password)
+            db.commit()
+            return True, "Contraseña actualizada."
+        return False, "La contraseña actual es incorrecta."
+    finally:
+        db.close()
