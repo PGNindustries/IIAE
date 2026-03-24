@@ -5,6 +5,7 @@ import plotly.express as px
 from fpdf import FPDF
 import os, json, csv, datetime
 from io import BytesIO
+import db
 
 # ==========================================
 # 1. CONFIGURACIÓN Y ESTILOS
@@ -473,6 +474,7 @@ st.markdown("""
 
 PLASTIC_FILE      = "data_plasticos.json"
 HIST_FILE         = "historial_recolecciones.csv"
+WTE_FILE          = "historial_wte.csv"
 BOTELLA_PET_KG    = 0.025
 COEF_FAUNA        = 0.03
 HIST_COLUMNS      = ["Fecha", "Ubicación", "Operador", "Notas", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
@@ -544,57 +546,31 @@ def parse_list_string(s: str) -> list[float]:
 
 
 def load_historial() -> pd.DataFrame:
-    """Carga historial CSV. Compatible con formato antiguo (5 cols) y nuevo (8 cols).
-    
-    Formato antiguo: Fecha | Tipos | Cantidades (kg) | Impacto total | Fauna afectada
-    Formato nuevo:   Fecha | Ubicación | Operador | Notas | Tipos | Cantidades (kg) | Impacto total | Fauna afectada
-    
-    La detección usa csv.reader para contar campos reales (maneja comas dentro de campos).
-    """
-    OLD_COLUMNS = ["Fecha", "Tipos", "Cantidades (kg)", "Impacto total", "Fauna afectada"]
-    
-    if not os.path.exists(HIST_FILE) or os.path.getsize(HIST_FILE) == 0:
-        return pd.DataFrame(columns=HIST_COLUMNS)
-    try:
-        # Contar columnas reales de la primera fila con csv.reader (respeta comillas)
-        import csv as _csv
-        with open(HIST_FILE, 'r', newline='') as f:
-            reader = _csv.reader(f)
-            first_row = next(reader, [])
-        ncols = len(first_row)
-        
-        is_new_format = (ncols >= 8)
-        
-        if is_new_format:
-            hist = pd.read_csv(HIST_FILE, header=None, names=HIST_COLUMNS)
-        else:
-            # Formato antiguo: leer con 5 columnas y añadir las nuevas vacías
-            hist = pd.read_csv(HIST_FILE, header=None, names=OLD_COLUMNS)
-            hist.insert(1, "Ubicación", "")
-            hist.insert(2, "Operador",  "")
-            hist.insert(3, "Notas",     "")
-        
-        hist["Fecha"]         = pd.to_datetime(hist["Fecha"], errors='coerce')
-        hist["Impacto total"] = pd.to_numeric(hist["Impacto total"], errors='coerce').fillna(0)
-        hist["Fauna afectada"]= pd.to_numeric(hist["Fauna afectada"], errors='coerce').fillna(0)
-        hist = hist.dropna(subset=["Fecha"])
-        hist = hist[HIST_COLUMNS]
-        return hist
-    except Exception as e:
-        st.warning(f"Aviso al leer historial: {e}")
-        return pd.DataFrame(columns=HIST_COLUMNS)
+    uid = st.session_state.get('user_id')
+    is_admin = st.session_state.get('is_admin', False)
+    return db.load_historial(user_id=uid, is_admin=is_admin)
 
 
 def save_historial(fecha: str, tipos: list, cantidades: list, total: float, fauna: float,
                    ubicacion: str = "", operador: str = "", notas: str = "") -> None:
-    try:
-        with open(HIST_FILE, 'a', newline='') as f:
-            csv.writer(f).writerow([
-                fecha, ubicacion, operador, notas,
-                ", ".join(tipos), ", ".join(map(str, cantidades)), total, fauna
-            ])
-    except IOError as e:
-        st.error(f"Error al guardar historial: {e}")
+    db.save_historial(
+        user_id=st.session_state['user_id'],
+        fecha=fecha, tipos=tipos, cantidades=cantidades, total=total, fauna=fauna,
+        ubicacion=ubicacion, operador=operador, notas=notas
+    )
+
+
+def load_wte_historial() -> pd.DataFrame:
+    uid = st.session_state.get('user_id')
+    is_admin = st.session_state.get('is_admin', False)
+    return db.load_wte_historial(user_id=uid, is_admin=is_admin)
+
+
+def save_wte_historial(fecha: str, e_mj: float, e_kwh: float, masa_kg: float) -> None:
+    db.save_wte_historial(
+        user_id=st.session_state['user_id'],
+        fecha=fecha, e_mj=e_mj, e_kwh=e_kwh, masa_kg=masa_kg
+    )
 
 
 def calcular_iiae(kg: float, datos: dict) -> dict:
@@ -715,7 +691,61 @@ def crear_pdf(df: pd.DataFrame, total: float, fauna: float, kg_total: float,
 
 
 # ==========================================
-# 4. NAVEGACIÓN
+# 4. AUTENTICACIÓN
+# ==========================================
+
+if 'user_id' not in st.session_state:
+    st.session_state['user_id'] = None
+    st.session_state['username'] = None
+    st.session_state['is_admin'] = False
+
+if st.session_state['user_id'] is None:
+    st.markdown(f'''<h1 style="text-align:center;color:{COLOR_PRIMARY};margin-top:2rem;">🌱 Acceso a IIAE Biobardas</h1>''', unsafe_allow_html=True)
+    c1, c2, c3 = st.columns([1, 2, 1])
+    with c2:
+        tab_log, tab_reg = st.tabs(["Iniciar Sesión", "Registrarse"])
+        
+        with tab_log:
+            log_user = st.text_input("Usuario", key="log_user")
+            log_pass = st.text_input("Contraseña", type="password", key="log_pass")
+            if st.button("Entrar", type="primary", use_container_width=True):
+                user = db.authenticate_user(log_user, log_pass)
+                if user:
+                    st.session_state['user_id'] = user.id
+                    st.session_state['username'] = user.username
+                    st.session_state['is_admin'] = user.is_admin
+                    st.success(f"Bienvenido/a {user.username}")
+                    st.rerun()
+                else:
+                    st.error("Credenciales incorrectas.")
+
+        with tab_reg:
+            reg_user = st.text_input("Nuevo Usuario", key="reg_user")
+            reg_pass = st.text_input("Contraseña Fuerte", type="password", key="reg_pass")
+            is_master = st.checkbox("Cuenta de Administrador (Ver todo en DB)")
+            if st.button("Registrarse", type="primary", use_container_width=True):
+                if not reg_user or not reg_pass:
+                    st.warning("Completa usuario y contraseña.")
+                else:
+                    success, msg = db.register_user(reg_user, reg_pass, is_admin=is_master)
+                    if success:
+                        st.success(msg + " Ahora inicia sesión.")
+                    else:
+                        st.error(msg)
+    
+    st.stop()  # Detenemos la app principal hasta que el usuario inicie sesión
+
+st.sidebar.markdown(f"👤 Bienvenido, **{st.session_state['username']}** {'👑 (Admin)' if st.session_state['is_admin'] else ''}")
+if st.sidebar.button("Cerrar Sesión"):
+    st.session_state['user_id'] = None
+    st.session_state['username'] = None
+    st.session_state['is_admin'] = False
+    st.rerun()
+
+st.sidebar.markdown("---")
+
+# ==========================================
+# 5. NAVEGACIÓN
 # ==========================================
 
 PAGINAS = {
@@ -1292,21 +1322,20 @@ elif selec == "Panel de Resultados":
     # Controles superiores
     col_del, col_export, _ = st.columns([1, 1, 3])
     if col_del.button("⚠️ Borrar Historial", type="secondary"):
-        if os.path.exists(HIST_FILE):
-            os.remove(HIST_FILE)
-            st.success("Historial borrado.")
-            st.rerun()
-
-    # Exportar historial como CSV descargable
-    if os.path.exists(HIST_FILE):
-        with open(HIST_FILE, 'rb') as f:
-            col_export.download_button(
-                "📥 Exportar CSV", f.read(),
-                file_name=f"historial_iiae_{datetime.date.today()}.csv",
-                mime="text/csv", use_container_width=True
-            )
+        db.clear_historial(st.session_state['user_id'], st.session_state.get('is_admin', False))
+        st.success("Historial borrado.")
+        st.rerun()
 
     hist = load_historial()
+
+    # Exportar historial como CSV descargable
+    if not hist.empty:
+        csv_data = hist.to_csv(index=False).encode('utf-8')
+        col_export.download_button(
+            "📥 Exportar CSV", csv_data,
+            file_name=f"historial_iiae_{datetime.date.today()}.csv",
+            mime="text/csv", use_container_width=True
+        )
 
     if hist.empty:
         st.info("📭 No hay datos históricos. Registra tu primera campaña en 'Análisis Ambiental'.")
@@ -1332,17 +1361,9 @@ elif selec == "Panel de Resultados":
     t_fauna = hist["Fauna afectada"].sum()
     t_pers  = calc_total_persistence(hist, plastics)
 
-    # ── Calcular energía WtE acumulada ──
-    PCI_VALS = {"HDPE":43.56,"LDPE":43.50,"PP":43.41,"EPS":40.72,"PS":40.72,"PET":21.85,"PVC":21.65}
-    ETA      = 0.25
-    MJ_KWH   = 1/3.6
-    total_wte_kwh = 0.0
-    for _, row in hist.iterrows():
-        tipos = [t.strip() for t in str(row["Tipos"]).split(",")]
-        kgs   = parse_list_string(row["Cantidades (kg)"])
-        if len(tipos) == len(kgs):
-            for pol, kg in zip(tipos, kgs):
-                total_wte_kwh += kg * PCI_VALS.get(pol.upper(), 0) * ETA * MJ_KWH
+    # ── Calcular energía WtE acumulada desde su propio historial ──
+    wte_hist = load_wte_historial()
+    total_wte_kwh = wte_hist["E_kWh"].sum() if not wte_hist.empty else 0.0
 
     m1, m2, m3, m4 = st.columns(4)
     m1.markdown(metric_card("IIAE Acumulado",     f"{t_iiae:,.2f}", "🌿"), unsafe_allow_html=True)
@@ -1365,8 +1386,8 @@ elif selec == "Panel de Resultados":
     st.markdown("---")
 
     # ── Evolución temporal ──
-    st.subheader("📅 Evolución Temporal")
-    tab_m, tab_s, tab_tbl = st.tabs(["Mensual", "Acumulado", "Tabla Historial"])
+    st.subheader("📅 Evolución Temporal y WtE")
+    tab_m, tab_s, tab_wte, tab_tbl = st.tabs(["Mensual", "Acumulado", "Valorización WtE", "Tabla Historial"])
 
     hist["Mes"] = hist["Fecha"].dt.to_period("M").astype(str)
 
@@ -1382,7 +1403,7 @@ elif selec == "Panel de Resultados":
             title="Impacto IIAE por Mes", text="Campañas",
             hover_data={"KgTotal": ":.1f", "Campañas": True, "Fauna": ":.1f"}
         )
-        fig_line.update_traces(texttemplate='%{text} camp.', textposition='outside')
+        fig_line.update_traces(texttemplate='%{text} camp.', textposition='outside', marker_line_width=1.5, marker_line_color=COLOR_PRIMARY, opacity=0.9)
         st.plotly_chart(fig_line, use_container_width=True)
 
         # Mini tabla resumen mensual
@@ -1402,9 +1423,38 @@ elif selec == "Panel de Resultados":
             hist_s, x="Fecha", y="IIAE Acumulado",
             title="Impacto Positivo Acumulado (IIAE)",
             color_discrete_sequence=[COLOR_ACCENT],
+            markers=True,
             hover_data={"Fecha_str": True, "Hora": True, "Kg Acumulados": ":.1f", "Fecha": False}
         )
+        fig_area.update_traces(line=dict(width=3, color=COLOR_PRIMARY), fillcolor='rgba(71,215,172,0.25)')
         st.plotly_chart(fig_area, use_container_width=True)
+
+    with tab_wte:
+        if not wte_hist.empty:
+            wte_hist_s = wte_hist.copy()
+            wte_hist_s["Fecha_dt"] = pd.to_datetime(wte_hist_s["Fecha"])
+            wte_hist_s = wte_hist_s.sort_values("Fecha_dt")
+            wte_hist_s["kWh Acumulado"] = wte_hist_s["E_kWh"].cumsum()
+            wte_hist_s["Fecha_str"] = wte_hist_s["Fecha_dt"].dt.strftime("%d/%m/%Y %H:%M")
+            fig_wte = px.area(
+                wte_hist_s, x="Fecha_dt", y="kWh Acumulado",
+                title="Generación Eléctrica Acumulada (kWh)",
+                color_discrete_sequence=[COLOR_WARN],
+                markers=True,
+                hover_data={"Fecha_str": True, "E_kWh": ":.1f", "Fecha_dt": False}
+            )
+            fig_wte.update_traces(fill="tozeroy", line=dict(width=3))
+            st.plotly_chart(fig_wte, use_container_width=True)
+
+            fig_wte_bar = px.bar(
+                wte_hist_s, x="Fecha_dt", y="E_kWh",
+                title="Energía Eléctrica Generada por Campaña (kWh)",
+                color_discrete_sequence=[COLOR_WARN],
+                labels={"Fecha_dt": "Fecha", "E_kWh": "Energía (kWh)"}
+            )
+            st.plotly_chart(fig_wte_bar, use_container_width=True)
+        else:
+            st.info("⚡ No hay datos valorizados. Ve a 'Valorización Energética' y guarda tus resultados.")
 
     with tab_tbl:
         # Formatear fecha con hora para mostrar en tabla
@@ -1420,42 +1470,7 @@ elif selec == "Panel de Resultados":
             use_container_width=True, hide_index=True
         )
 
-    # ── Análisis de horarios ──
-    if hist["Fecha"].dt.hour.sum() > 0:  # solo si hay datos de hora reales
-        st.markdown("---")
-        st.subheader("🕐 Análisis de Horarios")
-        hc1, hc2 = st.columns(2)
-        with hc1:
-            hist["Hora_num"] = hist["Fecha"].dt.hour + hist["Fecha"].dt.minute / 60
-            hist["Hora_str"] = hist["Fecha"].dt.strftime("%H:%M")
-            fig_hora = px.scatter(
-                hist, x="Hora_num", y="Impacto total",
-                title="Impacto por hora del día",
-                color="Impacto total",
-                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
-                hover_data={"Hora_str": True, "Impacto total": ":.2f", "Hora_num": False},
-                labels={"Hora_num": "Hora del día", "Impacto total": "IIAE"}
-            )
-            fig_hora.update_layout(coloraxis_showscale=False, xaxis=dict(tickvals=list(range(0,25,2)),
-                ticktext=[f"{h:02d}:00" for h in range(0,25,2)]))
-            st.plotly_chart(fig_hora, use_container_width=True)
-        with hc2:
-            franja_labels = {(6,12): "Mañana 6-12h", (12,17): "Mediodía 12-17h",
-                             (17,21): "Tarde 17-21h", (0,6): "Nocturno 0-6h", (21,24): "Noche 21-24h"}
-            def get_franja(h):
-                for (a,b), label in franja_labels.items():
-                    if a <= h < b: return label
-                return "Otra"
-            hist["Franja"] = hist["Fecha"].dt.hour.apply(get_franja)
-            df_franja = hist.groupby("Franja")["Impacto total"].agg(["sum", "count"]).reset_index()
-            df_franja.columns = ["Franja", "IIAE Total", "Campañas"]
-            fig_franja = px.bar(df_franja, x="Franja", y="IIAE Total",
-                title="IIAE por franja horaria", color="IIAE Total",
-                color_continuous_scale=["#c9eac6", COLOR_ACCENT, COLOR_PRIMARY],
-                text="Campañas")
-            fig_franja.update_traces(texttemplate='%{text} camp.', textposition='outside')
-            fig_franja.update_layout(coloraxis_showscale=False)
-            st.plotly_chart(fig_franja, use_container_width=True)
+
 
     # ── Análisis de peligrosidad ──
     st.markdown("---")
@@ -1507,16 +1522,15 @@ elif selec == "Panel de Resultados":
             )
             st.caption("💡 Plásticos ligeros pueden tener mayor impacto que materiales más pesados.")
 
-        # Gráfico Kg vs Impacto Real
         st.markdown("#### 🆚 Peso (Kg) vs Daño Real (IIAE)")
         df_melt = df_peligro.melt(
             id_vars="Plástico", value_vars=["Kg", "Impacto Real"],
             var_name="Métrica", value_name="Valor"
         )
         fig_comp = px.bar(
-            df_melt, x="Plástico", y="Valor", color="Métrica", barmode="group",
+            df_melt, x="Valor", y="Plástico", color="Métrica", orientation='h', barmode="group",
             color_discrete_map={"Kg": COLOR_GRID, "Impacto Real": COLOR_PRIMARY},
-            title="Comparativa: Masa recogida vs Impacto ambiental real"
+            title="Comparativa: Masa vs Impacto (Barras Horizontales)"
         )
         st.plotly_chart(fig_comp, use_container_width=True)
 
@@ -1555,7 +1569,7 @@ elif selec == "Valorización Energética":
     st.markdown(f'''<h1 style="font-family:Fraunces,serif;font-size:2.2rem;font-weight:400;font-style:italic;color:{COLOR_PRIMARY};letter-spacing:-0.5px;margin-bottom:0.1rem;">Valorización Energética</h1>''', unsafe_allow_html=True)
     st.markdown(
         "Estimación del potencial de generación eléctrica a partir del plástico interceptado mediante **valorización térmica directa** *(Waste-to-Energy)*. "
-        "Metodología §2.8 del TFG — fórmula termodinámica con PCI de la base de datos **Phyllis2/TNO**."
+        "Análisis termodinámico con cálculo de Poder Calorífico Inferior (PCI) basado en referencias internacionales (**Phyllis2/TNO**)."
     )
     st.markdown("---")
 
@@ -1572,7 +1586,7 @@ elif selec == "Valorización Energética":
     ETA_PLANTA = 0.25   # Rendimiento eléctrico global de planta ciclo combinado (§2.8.3)
     MJ_TO_KWH  = 1 / 3.6
 
-    st.markdown("Calcula la energía eléctrica recuperable según la metodología §2.8.3 del TFG. La justificación científica y la fórmula completa están en **Modelo de Cálculo → Valorización WtE**.")
+    st.markdown("Calcula la energía eléctrica recuperable mediante termodinámica de ciclo combinado. La justificación científica y la fórmula completa están en **Modelo de Cálculo → Valorización WtE**.")
 
     st.markdown("---")
 
@@ -1606,7 +1620,9 @@ elif selec == "Valorización Energética":
 
     st.markdown("<br>", unsafe_allow_html=True)
     if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True):
+        st.session_state["wte_calc_trigger"] = True
 
+    if st.session_state.get("wte_calc_trigger", False):
         activos = {p: kg for p, kg in kg_vals.items() if kg > 0}
         if not activos:
             st.warning("⚠️ Introduce al menos un valor de kg mayor a 0.")
@@ -1654,6 +1670,7 @@ elif selec == "Valorización Energética":
                 fig_bar.update_traces(textposition="outside")
                 fig_bar.update_layout(coloraxis_showscale=False, showlegend=False)
                 st.plotly_chart(fig_bar, use_container_width=True)
+                try_write_image(fig_bar, "wte_bar_impacto.png")
 
             with col_g2:
                 # Gráfico donut de distribución de energía
@@ -1665,6 +1682,7 @@ elif selec == "Valorización Energética":
                 )
                 fig_pie.update_traces(textposition="inside", textinfo="percent+label")
                 st.plotly_chart(fig_pie, use_container_width=True)
+                try_write_image(fig_pie, "wte_pie_impacto.png")
 
             # ── Tabla detallada ──
             st.markdown("### Desglose por polímero")
@@ -1742,7 +1760,7 @@ elif selec == "Valorización Energética":
                 pdf.set_xy(10, 32)
                 pdf.set_font("Arial", "", 10)
                 pdf.set_text_color(65, 81, 49)
-                pdf.cell(0, 7, safe(f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Metodologia: S.2.8.3 TFG UMH Elche & Univ. Montevideo"), ln=1)
+                pdf.cell(0, 7, safe(f"Fecha: {datetime.datetime.now().strftime('%d/%m/%Y %H:%M')}   |   Metodologia: Analisis Termodinamico Waste-to-Energy"), ln=1)
                 pdf.ln(4)
                 # Resumen ejecutivo
                 pdf.set_font("Arial", "B", 12)
@@ -1789,20 +1807,35 @@ elif selec == "Valorización Energética":
                 pdf.set_font("Arial", "", 9)
                 pdf.set_text_color(100, 100, 100)
                 pdf.cell(0, 6, safe(f"eta_Planta = {ETA_PLANTA} (Arena et al., 2015)  |  PCI: Phyllis2/TNO"), ln=1)
-                pdf.cell(0, 6, "TFG: Pedro Juan Garcia Navarro  |  UMH Elche & Univ. de Montevideo  |  2026", ln=1)
+                pdf.cell(0, 6, "Sistema de Gestion Ambiental IIAE  |  Reporte Automático Estratégico", ln=1)
+                
+                # Gráficos de Valorización WtE
+                for img_path in ["wte_bar_impacto.png", "wte_pie_impacto.png"]:
+                    if os.path.exists(img_path):
+                        pdf.ln(6)
+                        pdf.image(img_path, w=150)
+
                 return pdf.output(dest='S').encode('latin-1')
 
             # Columna de descarga
             df_export = df_res.rename(columns={"Polímero":"Polimero"})
             pdf_bytes = generar_pdf_wte(df_export, total_mj, total_kwh, total_kg, hogares_dias, km_electrico)
-            st.download_button(
-                label="📥 Descargar informe PDF",
-                data=pdf_bytes,
-                file_name=f"informe_wte_biobardas_{datetime.date.today()}.pdf",
-                mime="application/pdf",
-                type="primary",
-                use_container_width=True
-            )
+            col_dw, col_save = st.columns(2)
+            with col_dw:
+                st.download_button(
+                    label="📥 Descargar informe PDF",
+                    data=pdf_bytes,
+                    file_name=f"informe_wte_biobardas_{datetime.date.today()}.pdf",
+                    mime="application/pdf",
+                    type="primary",
+                    use_container_width=True
+                )
+            with col_save:
+                if st.button("💾 Añadir a Panel de Resultados", type="primary", use_container_width=True):
+                    fecha_iso  = datetime.datetime.now().isoformat(sep=' ')
+                    save_wte_historial(fecha_iso, total_mj, total_kwh, total_kg)
+                    st.success("✅ Guardado en el historial de Valorización Energética.")
+                    st.session_state["wte_calc_trigger"] = False
 
 
 
@@ -1986,7 +2019,7 @@ elif selec == "Modelo de Cálculo":
 
 
     with tab5:
-        st.markdown("### Metodología Waste-to-Energy (§2.8)")
+        st.markdown("### Metodología Waste-to-Energy")
         st.markdown("Justificación técnica de la valorización energética como destino óptimo del plástico degradado interceptado por biobardas.")
 
         col_j1, col_j2, col_j3 = st.columns(3)
@@ -2016,7 +2049,7 @@ elif selec == "Modelo de Cálculo":
 </div>""", unsafe_allow_html=True)
 
         st.markdown("<br>", unsafe_allow_html=True)
-        st.markdown("### Fórmula termodinámica (§2.8.3)")
+        st.markdown("### Fórmula termodinámica")
         st.latex(r"E_{Elect} = \sum_{i=1}^{n} \left( M_i \cdot PCI_i \right) \cdot \eta_{Planta}")
         st.markdown(f"""
 <div style='background:rgba(23,87,74,0.06);border-radius:12px;padding:16px 22px;
