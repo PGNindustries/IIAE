@@ -739,7 +739,7 @@ if st.session_state['user_id'] is None:
         with tab_log:
             log_user = st.text_input("Usuario", key="log_user")
             log_pass = st.text_input("Contraseña", type="password", key="log_pass")
-            if st.button("Entrar", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+            if st.button("Entrar", type="primary", use_container_width=True):
                 user = db.authenticate_user(log_user, log_pass)
                 if user:
                     st.session_state['user_id'] = user.id
@@ -757,7 +757,7 @@ if st.session_state['user_id'] is None:
             admin_code = ""
             if is_master:
                 admin_code = st.text_input("Código de acceso Admin", type="password", key="reg_admin_code")
-            if st.button("Registrarse", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+            if st.button("Registrarse", type="primary", use_container_width=True):
                 if not reg_user or not reg_pass:
                     st.warning("Completa usuario y contraseña.")
                 elif is_master and admin_code != st.secrets.get("ADMIN_SECRET", "admin123"):
@@ -783,7 +783,7 @@ with st.sidebar.expander("⚙️ Configuración de Cuenta"):
     st.markdown("**Cambiar Contraseña**")
     old_p = st.text_input("Contraseña actual", type="password")
     new_p = st.text_input("Nueva contraseña", type="password")
-    if st.button("Actualizar contraseña", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+    if st.button("Actualizar contraseña", use_container_width=True):
         if not old_p or not new_p:
             st.warning("Completa ambos campos.")
         else:
@@ -795,7 +795,7 @@ with st.sidebar.expander("⚙️ Configuración de Cuenta"):
     
     st.markdown("---")
     st.markdown("**Eliminar Perfil**")
-    if st.button("🗑️ Eliminar mi cuenta", type="secondary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+    if st.button("🗑️ Eliminar mi cuenta", type="secondary", use_container_width=True):
         st.session_state['confirm_delete'] = True
 
 if st.session_state.get('confirm_delete', False):
@@ -879,7 +879,7 @@ if "tutorial_seen" not in st.session_state:
 
 with st.sidebar:
     st.markdown("<div style='padding:0 12px 8px;'>", unsafe_allow_html=True)
-    if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+    if st.button("❓ Tutorial de uso", key="btn_tutorial_open", use_container_width=True):
         st.session_state["tutorial_seen"] = False
         st.rerun()
     st.markdown("</div>", unsafe_allow_html=True)
@@ -1134,7 +1134,7 @@ if selec == "Inicio":
 
     with col_img:
         if os.path.exists("dibujo_rio_biobarda.png"):
-            st.image("dibujo_rio_biobarda.png", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False})
+            st.image("dibujo_rio_biobarda.png", use_container_width=True)
         else:
             # Placeholder visual con identidad Biobardas (sin imagen)
             st.markdown(f"""
@@ -1191,7 +1191,7 @@ elif selec == "Análisis Ambiental":
                 else:
                     st.warning("Introduce un nombre válido.")
 
-            if col_reset.button("🔄 Restablecer", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+            if col_reset.button("🔄 Restablecer", use_container_width=True):
                 save_plastics(DEF_PLASTICS)
                 st.toast("Valores restablecidos.", icon="✅")
                 st.rerun()
@@ -1199,7 +1199,7 @@ elif selec == "Análisis Ambiental":
             # Eliminar material
             st.markdown("**Eliminar material:**")
             to_delete = st.selectbox("Selecciona", [""] + list(plastics.keys()))
-            if st.button("🗑️ Eliminar", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}) and to_delete:
+            if st.button("🗑️ Eliminar", use_container_width=True) and to_delete:
                 if to_delete in plastics:
                     del plastics[to_delete]
                     save_plastics(plastics)
@@ -1689,7 +1689,7 @@ elif selec == "Valorización Energética":
         st.caption(f"💡 Valores prellenados con la última campaña registrada ({hist.sort_values('Fecha').iloc[-1]['Fecha'].strftime('%d/%m/%Y %H:%M')}).")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+    if st.button("⚡ Calcular Potencial Energético", type="primary", use_container_width=True):
         st.session_state["wte_calc_trigger"] = True
 
     if st.session_state.get("wte_calc_trigger", False):
@@ -1901,7 +1901,7 @@ elif selec == "Valorización Energética":
                     use_container_width=True
                 )
             with col_save:
-                if st.button("💾 Añadir a Panel de Resultados", type="primary", use_container_width=True, config={'staticPlot': True, 'displayModeBar': False}):
+                if st.button("💾 Añadir a Panel de Resultados", type="primary", use_container_width=True):
                     fecha_iso  = datetime.datetime.now().isoformat(sep=' ')
                     save_wte_historial(fecha_iso, total_mj, total_kwh, total_kg)
                     st.success("✅ Guardado en el historial de Valorización Energética.")
