@@ -56,15 +56,17 @@ def get_engine():
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=get_engine())
 
 # --- AUTENTICACIÓN ---
-def hash_password(password: str, salt: bytes = None) -> bytes:
+def hash_password(password: str, salt: bytes = None) -> str:
     if salt is None:
         salt = os.urandom(32)
     key = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
-    return salt + key
+    return (salt + key).hex()
 
-def verify_password(stored_password: bytes, provided_password: str) -> bool:
-    salt = stored_password[:32]
-    key = stored_password[32:]
+def verify_password(stored_password, provided_password: str) -> bool:
+    # Convertimos de vuelta de hexadecimal a bytes (y soportamos bytes por compatibilidad)
+    stored_bytes = bytes.fromhex(stored_password) if isinstance(stored_password, str) else stored_password
+    salt = stored_bytes[:32]
+    key = stored_bytes[32:]
     new_key = hashlib.pbkdf2_hmac('sha256', provided_password.encode('utf-8'), salt, 100000)
     return key == new_key
 
