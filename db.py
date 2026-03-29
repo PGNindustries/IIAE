@@ -126,8 +126,8 @@ def save_historial(user_id: int, fecha: str, tipos: list, cantidades: list, tota
             notas=notas,
             tipos=", ".join(tipos),
             cantidades=", ".join(map(str, cantidades)),
-            impacto_total=total,
-            fauna_afectada=fauna
+            impacto_total=float(total),
+            fauna_afectada=float(fauna)
         )
         db.add(rec)
         db.commit()
@@ -157,9 +157,9 @@ def save_wte_historial(user_id: int, fecha: str, e_mj: float, e_kwh: float, masa
         wte_rec = Wte(
             user_id=user_id,
             fecha=fecha,
-            e_mj=e_mj,
-            e_kwh=e_kwh,
-            masa_kg=masa_kg
+            e_mj=float(e_mj),
+            e_kwh=float(e_kwh),
+            masa_kg=float(masa_kg)
         )
         db.add(wte_rec)
         db.commit()
